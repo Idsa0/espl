@@ -3,10 +3,10 @@
 all: clean compile link
 
 link:
-	gcc -g -m32 -Wall -o out bubble.o
+	gcc -g -m32 -Wall -o out xp.o
 
 compile:
-	gcc -g -m32 -Wall -c -o bubble.o bubblesort.c
+	gcc -g -m32 -Wall -c -o xp.o hexaPrint.c
 
 clean:
 	rm -f *.o out
