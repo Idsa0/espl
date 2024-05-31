@@ -32,6 +32,9 @@ struct link
     virus *vir;
 };
 
+link *virus_list = NULL;
+FILE *file = NULL;
+
 /* Print the data of every link in list to the given stream. Each item followed by a newline character. */
 void list_print(link *virus_list, FILE *);
 /* Add a new link with the given data at the beginning of the list and return a pointer to the list (i.e., the first link in the list).
@@ -41,7 +44,12 @@ link *list_append(link *virus_list, virus *data);
 /* Free the memory allocated by the list. */
 void list_free(link *virus_list);
 
-void load_signatures(FILE *file);
+void LoadSignatures();
+link *load_signatures(FILE *file);
+void PrintSignatures();
+void DetectViruses();
+void FixFile();
+void quit();
 
 typedef struct fun_desc
 {
@@ -56,14 +64,15 @@ int main(int argc, char **argv)
         debug = 1;
 
     strcpy(sigFileName, "signatures-L"); // default file name
+    file = fopen(sigFileName, "rb");
 
     fun_desc functions[] = {
         {"Set signatures file name", SetSigFileName},
-        {"Load signatures", NULL},
-        {"Print signatures", NULL},
-        {"Detect viruses", NULL},
-        {"Fix file", NULL},
-        {"Quit", NULL}};
+        {"Load signatures", LoadSignatures},
+        {"Print signatures", PrintSignatures},
+        {"Detect viruses", DetectViruses},
+        {"Fix file", FixFile},
+        {"Quit", quit}};
 
     int bound = sizeof(functions) / sizeof(functions[0]);
     int choice;
@@ -92,39 +101,11 @@ int main(int argc, char **argv)
             }
         }
     }
-
-    FILE *file = fopen(sigFileName, "rb");
-    if (!file)
-    {
-        printf("Error: cannot open file\n");
-        return 1;
-    }
-
-    // check if the file is starts with the magic numbers VIRL or VIRB
-    char sig[5] = {0};
-    fread(sig, 1, 4, file);
-    if (strcmp(sig, "VIRL") != 0 && strcmp(sig, "VIRB") != 0)
-    {
-        printf("Error: no virus detected\n");
-        return 1;
-    }
-
-    virus *v;
-    while (!feof(file))
-    {
-        v = readVirus(file);
-        printVirus(v);
-        virus_free(v);
-    }
-
-    fclose(file);
-    return 0;
 }
 
 void PrintHex(unsigned char buffer[], int length, FILE *out)
 {
-    int i;
-    for (i = 0; i < length - 1; ++i)
+    for (int i = 0; i < length - 1; ++i)
         fprintf(out, "%02X ", buffer[i]);
 
     if (length > 0)
@@ -136,7 +117,9 @@ void SetSigFileName()
     printf("Enter signature file name: ");
     fgets(sigFileName, sizeof(sigFileName), stdin);
     sigFileName[strcspn(sigFileName, "\n")] = 0; // strip the newline character
-    printf("file name: %s\n", sigFileName);
+    file = fopen(sigFileName, "rb");
+    if (!file)
+        printf("Error: cannot open file\n");
 }
 
 virus *readVirus(FILE *file)
@@ -184,13 +167,10 @@ void list_print(link *virus_list, FILE *out)
 
 link *list_append(link *virus_list, virus *data)
 {
-    if (!data)
-        return virus_list;
-
-    link *newLink = (link *)malloc(sizeof(link));
-    newLink->vir = data;
-    newLink->nextVirus = virus_list;
-    return newLink;
+    link *next = (link *)malloc(sizeof(link));
+    next->vir = data;
+    next->nextVirus = virus_list;
+    return next;
 }
 
 void list_free(link *virus_list)
@@ -203,12 +183,53 @@ void list_free(link *virus_list)
     free(virus_list);
 }
 
-void load_signatures(FILE *file)
+void LoadSignatures()
 {
-    virus *v;
-    while (!feof(file))
+    if (file)
+        virus_list = load_signatures(file);
+    else
+        printf("Error: no file loaded\n");
+}
+
+link *load_signatures(FILE *file)
+{
+    // check if the file is starts with the magic numbers VIRL or VIRB
+    char sig[5] = {0};
+    fread(sig, 1, 4, file);
+    if (strcmp(sig, "VIRL") != 0 && strcmp(sig, "VIRB") != 0)
     {
-        v = readVirus(file);
-        list_append(NULL, v);
+        printf("Error: no virus detected\n");
+        return NULL;
     }
+
+    virus *v;
+    link *head = NULL;
+    while ((v = readVirus(file)))
+        head = list_append(head, v);
+
+    return head;
+}
+
+void PrintSignatures()
+{
+    list_print(virus_list, stdout);
+}
+
+void DetectViruses()
+{
+    printf("NOT YET IMPLEMENTED\n");
+}
+
+void FixFile()
+{
+    printf("NOT YET IMPLEMENTED\n");
+}
+
+void quit()
+{
+    list_free(virus_list);
+    if (file)
+        fclose(file);
+
+    exit(0);
 }
