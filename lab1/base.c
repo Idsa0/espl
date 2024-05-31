@@ -10,9 +10,9 @@ char xoprt(char c);
 
 char *map(char *array, int array_length, char (*f)(char))
 {
-    char *mapped_array = (char *)(malloc(array_length * sizeof(char)));
+    char *mapped_array = (char *)malloc(array_length * sizeof(char));
     /* TODO: Complete during task 2.a */
-    for (int i = 0; i < array_length / sizeof(char); i++)
+    for (int i = 0; i < array_length; i++)
         mapped_array[i] = f(array[i]);
 
     return mapped_array;
