@@ -3,13 +3,14 @@
 all: clean compile link
 
 link:
-	gcc -g -m32 -Wall -o out xp.o
+	gcc -g -m32 -Wall -o virusDetector vd.o
+	gcc -g -m32 -Wall -o out vd.o
 
 compile:
-	gcc -g -m32 -Wall -c -o xp.o hexaPrint.c
+	gcc -g -m32 -Wall -c -o vd.o AntiVirus.c
 
 clean:
-	rm -f *.o out
+	rm -f *.o out virusDetector
 
 run:
 	out

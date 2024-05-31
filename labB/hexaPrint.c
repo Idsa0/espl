@@ -22,10 +22,10 @@ void PrintHex(int buffer[], int length)
 {
     int i;
     for (i = 0; i < length - 1; ++i)
-        printf("%x ", buffer[i]);
+        printf("%02X ", buffer[i]);
 
     if (length > 0)
-        printf("%x\n", buffer[length - 1]);
+        printf("%02X\n", buffer[length - 1]);
 }
 
 int main(int argc, char **argv)
