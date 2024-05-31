@@ -5,6 +5,10 @@
 #define MAX_CHOICE_LEN 16
 #define MAX_SIG_FILE_NAME 256
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+int debug = 0;
+
 void PrintHex(unsigned char buffer[], int length, FILE *out);
 
 char sigFileName[MAX_SIG_FILE_NAME] = {0};
@@ -33,7 +37,8 @@ struct link
 };
 
 link *virus_list = NULL;
-FILE *file = NULL;
+FILE *sigFile = NULL;
+FILE *suspectFile = NULL;
 
 /* Print the data of every link in list to the given stream. Each item followed by a newline character. */
 void list_print(link *virus_list, FILE *);
@@ -51,6 +56,10 @@ void DetectViruses();
 void FixFile();
 void quit();
 
+char *buffer = NULL;
+
+void detect_virus(char *buffer, unsigned int size, link *virus_list);
+
 typedef struct fun_desc
 {
     char *name;
@@ -59,12 +68,24 @@ typedef struct fun_desc
 
 int main(int argc, char **argv)
 {
-    int debug = 0;
-    if (argc > 1 && strcmp(argv[1], "-D") == 0)
+    if (argc < 2)
+    {
+        printf("Usage: %s <file> [-D]\n", argv[0]);
+        return 1;
+    }
+
+    suspectFile = fopen(argv[1], "rb");
+    if (!suspectFile)
+    {
+        printf("Error: cannot open file\n");
+        return 1;
+    }
+
+    if (argc == 3 && strcmp(argv[2], "-D") == 0)
         debug = 1;
 
     strcpy(sigFileName, "signatures-L"); // default file name
-    file = fopen(sigFileName, "rb");
+    sigFile = fopen(sigFileName, "rb");
 
     fun_desc functions[] = {
         {"Set signatures file name", SetSigFileName},
@@ -117,8 +138,8 @@ void SetSigFileName()
     printf("Enter signature file name: ");
     fgets(sigFileName, sizeof(sigFileName), stdin);
     sigFileName[strcspn(sigFileName, "\n")] = 0; // strip the newline character
-    file = fopen(sigFileName, "rb");
-    if (!file)
+    sigFile = fopen(sigFileName, "rb");
+    if (!sigFile)
         printf("Error: cannot open file\n");
 }
 
@@ -129,6 +150,14 @@ virus *readVirus(FILE *file)
 
     virus *v = (virus *)malloc(sizeof(virus));
     fread(v, 1, sizeof(short) + VIRUS_NAME_LENGTH, file);
+    if (v->SigSize == 0)
+    {
+        free(v);
+        return NULL;
+    }
+    if (v->SigSize > 1000 && debug)
+        printf("Warning: signature size of %i is too big\n", v->SigSize);
+
     v->sig = (unsigned char *)malloc(v->SigSize);
     fread(v->sig, 1, v->SigSize, file);
     return v;
@@ -185,8 +214,8 @@ void list_free(link *virus_list)
 
 void LoadSignatures()
 {
-    if (file)
-        virus_list = load_signatures(file);
+    if (sigFile)
+        virus_list = load_signatures(sigFile);
     else
         printf("Error: no file loaded\n");
 }
@@ -217,7 +246,39 @@ void PrintSignatures()
 
 void DetectViruses()
 {
-    printf("NOT YET IMPLEMENTED\n");
+    if (!suspectFile)
+    {
+        printf("Error: no file loaded\n");
+        return;
+    }
+    if (!virus_list)
+    {
+        printf("Error: no signatures loaded\n");
+        return;
+    }
+
+#define BUFFER_SIZE 10000
+    if (!buffer)
+        buffer = (char *)malloc(sizeof(char) * BUFFER_SIZE);
+    fread(buffer, 1, sizeof(buffer), suspectFile);
+    detect_virus(buffer, sizeof(buffer), virus_list);
+}
+
+void detect_virus(char *buffer, unsigned int size, link *virus_list)
+{
+    if (!virus_list)
+        return;
+
+    virus *v = virus_list->vir;
+
+    for (int i = 0; i < size; ++i)
+        if (memcmp(buffer + i, v->sig, v->SigSize) == 0)
+        {
+            printf("Virus detected: %s, at offset %d\n", v->virusName, i);
+            // maybe add a break here to avoid detecting the same virus multiple times?
+        }
+
+    detect_virus(buffer, size, virus_list->nextVirus);
 }
 
 void FixFile()
@@ -228,8 +289,14 @@ void FixFile()
 void quit()
 {
     list_free(virus_list);
-    if (file)
-        fclose(file);
+    if (suspectFile)
+        fclose(suspectFile);
+    if (sigFile)
+        fclose(sigFile);
+    if (buffer)
+        free(buffer);
 
     exit(0);
 }
+
+// TODO fix memory leak
