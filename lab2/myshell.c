@@ -3,6 +3,7 @@
 #include <linux/limits.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/wait.h>
 
 #include "LineParser.h"
 
@@ -14,7 +15,7 @@ void execute(cmdLine *pCmdLine);
 
 int main(int argc, char **argv)
 {
-    if (argc == 2 && strcmp(argv[1], "-D") == 0)
+    if (argc == 2 && strcmp(argv[1], "-d") == 0)
         debug = 1;
 
     char buf[MAX_LINE] = {0};
@@ -32,6 +33,14 @@ int main(int argc, char **argv)
             exit(EXIT_SUCCESS);
         }
 
+        if (strcmp(line->arguments[0], "cd") == 0)
+        {
+            if (chdir(line->arguments[1]) == -1)
+                perror("Error: ");
+            freeCmdLines(line);
+            continue;
+        }
+
         execute(line);
         freeCmdLines(line);
         line = NULL;
@@ -46,13 +55,33 @@ void execute(cmdLine *pCmdLine)
     if (pid == -1)
     {
         freeCmdLines(pCmdLine);
-        exit(EXIT_FAILURE);
+        _exit(EXIT_FAILURE);
     }
-    int val = execvp(pCmdLine->arguments[0], pCmdLine->arguments);
-    if (val == -1)
+
+    if (pid == 0)
     {
-        perror("Execution failed\n");
-        freeCmdLines(pCmdLine);
-        exit(EXIT_FAILURE);
+        if (debug)
+            fprintf(stderr, "PID: %d\nExecuting command: %s\n", pid, pCmdLine->arguments[0]);
+
+        int val = execvp(pCmdLine->arguments[0], pCmdLine->arguments);
+        if (val == -1)
+        {
+            perror("Error: ");
+            freeCmdLines(pCmdLine);
+            _exit(EXIT_FAILURE);
+        }
+    }
+    else
+    {
+        if (pCmdLine->blocking)
+        {
+            int status;
+            if (waitpid(pid, &status, 0) == -1)
+            {
+                perror("Error: ");
+                freeCmdLines(pCmdLine);
+                _exit(EXIT_FAILURE); // should I exit here?
+            }
+        }
     }
 }
