@@ -1,18 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #define MAX_CHOICE_LEN 16
-#define MAX_SIG_FILE_NAME 256
-
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#define MAX_FILE_NAME 256
+#define BUFFER_SIZE 10000
+#define RET 0xC3 // return (near) @see https://c9x.me/x86/html/file_module_x86_id_280.html
 
 int debug = 0;
 
 void PrintHex(unsigned char buffer[], int length, FILE *out);
 
-char sigFileName[MAX_SIG_FILE_NAME] = {0};
+char sigFileName[MAX_FILE_NAME] = {0};
 void SetSigFileName();
+int endian = 0; // 0 - little endian, 1 - big endian
 
 #define VIRUS_NAME_LENGTH 16
 
@@ -39,6 +41,7 @@ struct link
 link *virus_list = NULL;
 FILE *sigFile = NULL;
 FILE *suspectFile = NULL;
+char suspectFileName[MAX_FILE_NAME] = {0};
 
 /* Print the data of every link in list to the given stream. Each item followed by a newline character. */
 void list_print(link *virus_list, FILE *);
@@ -56,8 +59,6 @@ void DetectViruses();
 void FixFile();
 void quit();
 
-char *buffer = NULL;
-
 void detect_virus(char *buffer, unsigned int size, link *virus_list);
 
 typedef struct fun_desc
@@ -65,6 +66,8 @@ typedef struct fun_desc
     char *name;
     void (*fun)(void);
 } fun_desc;
+
+void neutralize_virus(char *fileName, int signatureOffset);
 
 int main(int argc, char **argv)
 {
@@ -74,10 +77,11 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    memcpy(suspectFileName, argv[1], strlen(argv[1]));
     suspectFile = fopen(argv[1], "rb");
     if (!suspectFile)
     {
-        printf("Error: cannot open file\n");
+        fprintf(stderr, "Error: cannot open file\n");
         return 1;
     }
 
@@ -138,9 +142,13 @@ void SetSigFileName()
     printf("Enter signature file name: ");
     fgets(sigFileName, sizeof(sigFileName), stdin);
     sigFileName[strcspn(sigFileName, "\n")] = 0; // strip the newline character
+
+    if (sigFile)
+        fclose(sigFile);
+
     sigFile = fopen(sigFileName, "rb");
     if (!sigFile)
-        printf("Error: cannot open file\n");
+        fprintf(stderr, "Error: cannot open file\n");
 }
 
 virus *readVirus(FILE *file)
@@ -149,17 +157,46 @@ virus *readVirus(FILE *file)
         return NULL;
 
     virus *v = (virus *)malloc(sizeof(virus));
-    fread(v, 1, sizeof(short) + VIRUS_NAME_LENGTH, file);
+    if (!v)
+    {
+        fprintf(stderr, "Error: memory allocation failed\n");
+        return NULL;
+    }
+
+    if (fread(v, 1, sizeof(short) + VIRUS_NAME_LENGTH, file) != sizeof(short) + VIRUS_NAME_LENGTH)
+    {
+        free(v);
+        return NULL;
+    }
+
     if (v->SigSize == 0)
     {
         free(v);
         return NULL;
     }
+
+    // no one knows how this works, copied from last semester spl assignment 3 solution
+    if (endian)
+        v->SigSize = ((v->SigSize & 0xFF00) >> 8) | ((v->SigSize & 0x00FF) << 8);
+
     if (v->SigSize > 1000 && debug)
-        printf("Warning: signature size of %i is too big\n", v->SigSize);
+        printf("Warning: signature size of %i is big\n", v->SigSize);
 
     v->sig = (unsigned char *)malloc(v->SigSize);
-    fread(v->sig, 1, v->SigSize, file);
+    if (!v->sig)
+    {
+        free(v);
+        fprintf(stderr, "Error: memory allocation failed\n");
+        return NULL;
+    }
+
+    if (fread(v->sig, 1, v->SigSize, file) != v->SigSize)
+    {
+        free(v->sig);
+        free(v);
+        return NULL;
+    }
+
     return v;
 }
 
@@ -191,15 +228,25 @@ void list_print(link *virus_list, FILE *out)
         return;
 
     print_virus_to_file(virus_list->vir, out);
+    fprintf(out, "\n");
     list_print(virus_list->nextVirus, out);
 }
 
 link *list_append(link *virus_list, virus *data)
 {
-    link *next = (link *)malloc(sizeof(link));
-    next->vir = data;
-    next->nextVirus = virus_list;
-    return next;
+    // this is done in backwards order since we are adding to the beginning of the list but the example has the list in the opposite order
+    // not sure which way is required so I'm doing it this way
+
+    link *newhead = (link *)malloc(sizeof(link));
+    if (!newhead)
+    {
+        fprintf(stderr, "Error: memory allocation failed\n");
+        return NULL;
+    }
+
+    newhead->vir = data;
+    newhead->nextVirus = virus_list;
+    return newhead;
 }
 
 void list_free(link *virus_list)
@@ -210,14 +257,18 @@ void list_free(link *virus_list)
     virus_free(virus_list->vir);
     list_free(virus_list->nextVirus);
     free(virus_list);
+    virus_list = NULL;
 }
 
 void LoadSignatures()
 {
+    if (virus_list)
+        list_free(virus_list);
+
     if (sigFile)
         virus_list = load_signatures(sigFile);
     else
-        printf("Error: no file loaded\n");
+        fprintf(stderr, "Error: no file loaded\n");
 }
 
 link *load_signatures(FILE *file)
@@ -225,9 +276,13 @@ link *load_signatures(FILE *file)
     // check if the file is starts with the magic numbers VIRL or VIRB
     char sig[5] = {0};
     fread(sig, 1, 4, file);
-    if (strcmp(sig, "VIRL") != 0 && strcmp(sig, "VIRB") != 0)
+    if (strcmp(sig, "VIRL") != 0)
+        endian = 1;
+    else if (strcmp(sig, "VIRB") != 0)
+        endian = 0;
+    else
     {
-        printf("Error: no virus detected\n");
+        fprintf(stderr, "Error: no virus signature\n");
         return NULL;
     }
 
@@ -236,6 +291,7 @@ link *load_signatures(FILE *file)
     while ((v = readVirus(file)))
         head = list_append(head, v);
 
+    fseek(file, 0, SEEK_SET); // reset the file pointer
     return head;
 }
 
@@ -248,20 +304,25 @@ void DetectViruses()
 {
     if (!suspectFile)
     {
-        printf("Error: no file loaded\n");
+        fprintf(stderr, "Error: no file loaded\n");
         return;
     }
     if (!virus_list)
     {
-        printf("Error: no signatures loaded\n");
+        fprintf(stderr, "Error: no signatures loaded\n");
         return;
     }
 
-#define BUFFER_SIZE 10000
-    if (!buffer)
-        buffer = (char *)malloc(sizeof(char) * BUFFER_SIZE);
-    fread(buffer, 1, sizeof(buffer), suspectFile);
-    detect_virus(buffer, sizeof(buffer), virus_list);
+    char buffer[BUFFER_SIZE] = {0};
+    int read;
+    if (!(read = fread(buffer, 1, sizeof(buffer), suspectFile)))
+    {
+        fprintf(stderr, "Error: cannot read file\n");
+        return;
+    }
+
+    detect_virus(buffer, read, virus_list);
+    fseek(suspectFile, 0, SEEK_SET); // reset the file pointer
 }
 
 void detect_virus(char *buffer, unsigned int size, link *virus_list)
@@ -273,17 +334,77 @@ void detect_virus(char *buffer, unsigned int size, link *virus_list)
 
     for (int i = 0; i < size; ++i)
         if (memcmp(buffer + i, v->sig, v->SigSize) == 0)
-        {
             printf("Virus detected: %s, at offset %d\n", v->virusName, i);
-            // maybe add a break here to avoid detecting the same virus multiple times?
-        }
 
     detect_virus(buffer, size, virus_list->nextVirus);
 }
 
 void FixFile()
 {
-    printf("NOT YET IMPLEMENTED\n");
+    suspectFile = fopen(suspectFileName, "rb");
+
+    if (!suspectFile)
+    {
+        fprintf(stderr, "Error: no file loaded\n");
+        return;
+    }
+    if (!virus_list)
+    {
+        fprintf(stderr, "Error: no signatures loaded\n");
+        return;
+    }
+
+    char buffer[BUFFER_SIZE] = {0};
+    int read;
+    if (!(read = fread(buffer, 1, sizeof(buffer), suspectFile)))
+    {
+        fprintf(stderr, "Error: cannot read file\n");
+        return;
+    }
+
+    fclose(suspectFile);
+    suspectFile = NULL;
+
+    link *curr = virus_list;
+    while (curr)
+    {
+        virus *v = curr->vir;
+        for (int i = 0; i < read; ++i)
+            if (memcmp(buffer + i, v->sig, v->SigSize) == 0)
+            {
+                printf("Neutralizing: %s, at offset %d\n", v->virusName, i);
+                neutralize_virus(suspectFileName, i);
+            }
+
+        curr = curr->nextVirus;
+    }
+    suspectFile = fopen(suspectFileName, "rb");
+}
+
+void neutralize_virus(char *fileName, int signatureOffset)
+{
+    FILE *file = fopen(fileName, "rb+");
+    if (!file)
+    {
+        fprintf(stderr, "Error: cannot open file\n");
+        return;
+    }
+
+    if (fseek(file, signatureOffset, SEEK_SET))
+    {
+        fprintf(stderr, "Error: cannot seek to offset\n");
+        fclose(file);
+        return;
+    }
+
+    if (fputc(RET, file) == EOF)
+    {
+        fprintf(stderr, "Error: cannot write to file\n");
+        fclose(file);
+        return;
+    }
+
+    fclose(file);
 }
 
 void quit()
@@ -293,10 +414,6 @@ void quit()
         fclose(suspectFile);
     if (sigFile)
         fclose(sigFile);
-    if (buffer)
-        free(buffer);
 
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
-
-// TODO fix memory leak
