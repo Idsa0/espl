@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
 #define MAX_CHOICE_LEN 16
 #define MAX_FILE_NAME 256
