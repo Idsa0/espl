@@ -54,3 +54,6 @@ dkms.conf
 
 # vscode
 .vscode/
+
+# other
+QUESTIONS.txt

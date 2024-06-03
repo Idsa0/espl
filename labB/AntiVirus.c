@@ -6,6 +6,8 @@
 #define MAX_FILE_NAME 256
 #define BUFFER_SIZE 10000
 #define RET 0xC3 // return (near) @see https://c9x.me/x86/html/file_module_x86_id_280.html
+#define VIRUS_SIGNATURE_LITTLE_ENDIAN "VIRL"
+#define VIRUS_SIGNATURE_BIG_ENDIAN "VIRB"
 
 int debug = 0;
 
@@ -37,7 +39,7 @@ struct link
     virus *vir;
 };
 
-link *virus_list = NULL;
+link *v_list = NULL;
 FILE *sigFile = NULL;
 FILE *suspectFile = NULL;
 char suspectFileName[MAX_FILE_NAME] = {0};
@@ -72,7 +74,7 @@ int main(int argc, char **argv)
 {
     if (argc < 2)
     {
-        printf("Usage: %s <file> [-D]\n", argv[0]);
+        printf("Usage: %s <file> [-d]\n", argv[0]);
         return 1;
     }
 
@@ -84,7 +86,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if (argc == 3 && strcmp(argv[2], "-D") == 0)
+    if (argc == 3 && strcmp(argv[2], "-d") == 0)
         debug = 1;
 
     strcpy(sigFileName, "signatures-L"); // default file name
@@ -96,9 +98,10 @@ int main(int argc, char **argv)
         {"Print signatures", PrintSignatures},
         {"Detect viruses", DetectViruses},
         {"Fix file", FixFile},
-        {"Quit", quit}};
+        {"Quit", quit},
+        {NULL, NULL}};
 
-    int bound = sizeof(functions) / sizeof(functions[0]);
+    int bound = sizeof(functions) / sizeof(functions[0]) - 1;
     int choice;
     char input[MAX_CHOICE_LEN];
     char *endptr;
@@ -261,24 +264,27 @@ void list_free(link *virus_list)
 
 void LoadSignatures()
 {
-    if (virus_list)
-        list_free(virus_list);
-
-    if (sigFile)
-        virus_list = load_signatures(sigFile);
-    else
+    if (!sigFile)
+    {
         fprintf(stderr, "Error: no file loaded\n");
+        return;
+    }
+
+    if (v_list)
+        list_free(v_list);
+
+    v_list = load_signatures(sigFile);
 }
 
 link *load_signatures(FILE *file)
 {
-    // check if the file is starts with the magic numbers VIRL or VIRB
+    // check if the file is starts with the magic numbers for virus signatures
     char sig[5] = {0};
     fread(sig, 1, 4, file);
-    if (strcmp(sig, "VIRL") != 0)
-        endian = 1;
-    else if (strcmp(sig, "VIRB") != 0)
+    if (strcmp(sig, VIRUS_SIGNATURE_LITTLE_ENDIAN) == 0)
         endian = 0;
+    else if (strcmp(sig, VIRUS_SIGNATURE_BIG_ENDIAN) == 0)
+        endian = 1;
     else
     {
         fprintf(stderr, "Error: no virus signature\n");
@@ -296,7 +302,7 @@ link *load_signatures(FILE *file)
 
 void PrintSignatures()
 {
-    list_print(virus_list, stdout);
+    list_print(v_list, stdout);
 }
 
 void DetectViruses()
@@ -306,7 +312,7 @@ void DetectViruses()
         fprintf(stderr, "Error: no file loaded\n");
         return;
     }
-    if (!virus_list)
+    if (!v_list)
     {
         fprintf(stderr, "Error: no signatures loaded\n");
         return;
@@ -320,7 +326,7 @@ void DetectViruses()
         return;
     }
 
-    detect_virus(buffer, read, virus_list);
+    detect_virus(buffer, read, v_list);
     fseek(suspectFile, 0, SEEK_SET); // reset the file pointer
 }
 
@@ -340,14 +346,15 @@ void detect_virus(char *buffer, unsigned int size, link *virus_list)
 
 void FixFile()
 {
-    suspectFile = fopen(suspectFileName, "rb");
+    if (!suspectFile)
+        suspectFile = fopen(suspectFileName, "rb");
 
     if (!suspectFile)
     {
         fprintf(stderr, "Error: no file loaded\n");
         return;
     }
-    if (!virus_list)
+    if (!v_list)
     {
         fprintf(stderr, "Error: no signatures loaded\n");
         return;
@@ -364,7 +371,7 @@ void FixFile()
     fclose(suspectFile);
     suspectFile = NULL;
 
-    link *curr = virus_list;
+    link *curr = v_list;
     while (curr)
     {
         virus *v = curr->vir;
@@ -408,7 +415,7 @@ void neutralize_virus(char *fileName, int signatureOffset)
 
 void quit()
 {
-    list_free(virus_list);
+    list_free(v_list);
     if (suspectFile)
         fclose(suspectFile);
     if (sigFile)
