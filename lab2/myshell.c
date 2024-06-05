@@ -4,6 +4,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <fcntl.h>
 
 #include "LineParser.h"
 
@@ -13,6 +17,18 @@ int debug = 0;
 
 void execute(cmdLine *pCmdLine);
 
+int stoierr(char *string)
+{
+    int val;
+    sscanf(string, "%d", &val);
+    if (val == 0)
+    {
+        fprintf(stderr, "Error: invalid number");
+        return -1;
+    }
+    return val;
+}
+
 int main(int argc, char **argv)
 {
     if (argc == 2 && strcmp(argv[1], "-d") == 0)
@@ -21,7 +37,7 @@ int main(int argc, char **argv)
     char buf[MAX_LINE] = {0};
     while (1)
     {
-        printf("Current working directory: %s\n", getcwd(NULL, PATH_MAX)); // is this correct?
+        printf("CWD: %s/\n", getcwd(NULL, PATH_MAX)); // is this correct?
 
         printf("Enter command: ");
         fgets(buf, MAX_LINE, stdin);
@@ -36,14 +52,41 @@ int main(int argc, char **argv)
         if (strcmp(line->arguments[0], "cd") == 0)
         {
             if (chdir(line->arguments[1]) == -1)
-                perror("Error: ");
+                perror("Error");
             freeCmdLines(line);
             continue;
         }
 
-        execute(line);
-        freeCmdLines(line);
-        line = NULL;
+        else if (strcmp(line->arguments[0], "alarm") == 0)
+        {
+            if (line->argCount != 2)
+                fprintf(stderr, "Error: invalid number of arguments");
+            else
+            {
+                int pid = stoierr(line->arguments[1]);
+                if (pid != -1)
+                    kill(pid, SIGCONT);
+            }
+        }
+
+        else if (strcmp(line->arguments[0], "blast") == 0)
+        {
+            if (line->argCount != 2)
+                fprintf(stderr, "Error: invalid number of arguments");
+            else
+            {
+                int pid = stoierr(line->arguments[1]);
+                if (pid != -1)
+                    kill(pid, SIGINT);
+            }
+        }
+
+        else
+        {
+            execute(line);
+            freeCmdLines(line);
+            line = NULL;
+        }
     }
 
     return 0;
@@ -63,10 +106,34 @@ void execute(cmdLine *pCmdLine)
         if (debug)
             fprintf(stderr, "PID: %d\nExecuting command: %s\n", pid, pCmdLine->arguments[0]);
 
+        if (pCmdLine->inputRedirect)
+        {
+            close(STDIN_FILENO);
+            int x = open(pCmdLine->inputRedirect, O_RDONLY | O_CREAT, 0777);
+            if (x == -1)
+            {
+                perror("Error");
+                freeCmdLines(pCmdLine);
+                _exit(EXIT_FAILURE);
+            }
+        }
+
+        if (pCmdLine->outputRedirect)
+        {
+            close(STDOUT_FILENO);
+            int x = open(pCmdLine->outputRedirect, O_WRONLY | O_CREAT, 0777);
+            if (x == -1)
+            {
+                perror("Error");
+                freeCmdLines(pCmdLine);
+                _exit(EXIT_FAILURE);
+            }
+        }
+
         int val = execvp(pCmdLine->arguments[0], pCmdLine->arguments);
         if (val == -1)
         {
-            perror("Error: ");
+            perror("Error");
             freeCmdLines(pCmdLine);
             _exit(EXIT_FAILURE);
         }
@@ -78,7 +145,7 @@ void execute(cmdLine *pCmdLine)
             int status;
             if (waitpid(pid, &status, 0) == -1)
             {
-                perror("Error: ");
+                perror("Error");
                 freeCmdLines(pCmdLine);
                 _exit(EXIT_FAILURE); // should I exit here?
             }
