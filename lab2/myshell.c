@@ -29,10 +29,19 @@ int stoierr(char *string)
     return val;
 }
 
+void set_debug(int argc, char **argv)
+{
+    for (int i = 1; i < argc; i++)
+        if (strcmp(argv[i], "-d") == 0)
+        {
+            debug = 1;
+            return;
+        }
+}
+
 int main(int argc, char **argv)
 {
-    if (argc == 2 && strcmp(argv[1], "-d") == 0)
-        debug = 1;
+    set_debug(argc, argv);
 
     char buf[MAX_LINE];
     while (1)
