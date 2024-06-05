@@ -34,10 +34,10 @@ int main(int argc, char **argv)
     if (argc == 2 && strcmp(argv[1], "-d") == 0)
         debug = 1;
 
-    char buf[MAX_LINE] = {0};
+    char buf[MAX_LINE];
     while (1)
     {
-        printf("CWD: %s/\n", getcwd(NULL, PATH_MAX)); // is this correct?
+        printf("CWD: %s/\n", getcwd(NULL, PATH_MAX));
 
         printf("Enter command: ");
         fgets(buf, MAX_LINE, stdin);
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
 
 void execute(cmdLine *pCmdLine)
 {
-    int pid = fork(); // maybe change to pid_t?
+    int pid = fork();
     if (pid == -1)
     {
         freeCmdLines(pCmdLine);
@@ -147,7 +147,7 @@ void execute(cmdLine *pCmdLine)
             {
                 perror("Error");
                 freeCmdLines(pCmdLine);
-                _exit(EXIT_FAILURE); // should I exit here?
+                _exit(EXIT_FAILURE);
             }
         }
     }
