@@ -46,7 +46,9 @@ int main(int argc, char **argv)
     char buf[MAX_LINE];
     while (1)
     {
-        printf("CWD: %s/\n", getcwd(NULL, PATH_MAX));
+        char cwd[PATH_MAX];
+        getcwd(cwd, PATH_MAX);
+        printf("CWD: %s/\n", cwd);
 
         printf("Enter command: ");
         fgets(buf, MAX_LINE, stdin);
