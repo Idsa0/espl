@@ -54,6 +54,22 @@ int main(int argc, char **argv)
         fgets(buf, MAX_LINE, stdin);
         cmdLine *line = parseCmdLines(buf);
 
+        if (!line)
+        {
+            if (feof(stdin))
+                exit(EXIT_SUCCESS);
+            
+            fprintf(stderr, "Error: invalid command\n");
+            continue;
+        }
+
+        if (!line->argCount)
+        {
+            fprintf(stderr, "Error: invalid command\n");
+            freeCmdLines(line);
+            continue;
+        }
+
         if (strcmp(line->arguments[0], "quit") == 0)
         {
             freeCmdLines(line);
