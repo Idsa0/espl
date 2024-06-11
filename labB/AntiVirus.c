@@ -8,14 +8,17 @@
 #define RET 0xC3 // return (near) @see https://c9x.me/x86/html/file_module_x86_id_280.html
 #define VIRUS_SIGNATURE_LITTLE_ENDIAN "VIRL"
 #define VIRUS_SIGNATURE_BIG_ENDIAN "VIRB"
+#define ENDIAN_L 0
+#define ENDIAN_B 1
+#define DEFAULT_SIGNATURE_FILE_NAME "signatures-L"
 
 int debug = 0;
 
 void PrintHex(unsigned char buffer[], int length, FILE *out);
 
-char sigFileName[MAX_FILE_NAME] = {0};
+char sigFileName[MAX_FILE_NAME]; // TODO test lazy init
 void SetSigFileName();
-int endian = 0; // 0 - little endian, 1 - big endian
+int endian = ENDIAN_L;
 
 #define VIRUS_NAME_LENGTH 16
 
@@ -42,7 +45,7 @@ struct link
 link *v_list = NULL;
 FILE *sigFile = NULL;
 FILE *suspectFile = NULL;
-char suspectFileName[MAX_FILE_NAME] = {0};
+char suspectFileName[MAX_FILE_NAME]; // TODO test lazy init
 
 /* Print the data of every link in list to the given stream. Each item followed by a newline character. */
 void list_print(link *virus_list, FILE *);
@@ -89,7 +92,7 @@ int main(int argc, char **argv)
     if (argc == 3 && strcmp(argv[2], "-d") == 0)
         debug = 1;
 
-    strcpy(sigFileName, "signatures-L"); // default file name
+    strcpy(sigFileName, DEFAULT_SIGNATURE_FILE_NAME);
     sigFile = fopen(sigFileName, "rb");
 
     fun_desc functions[] = {
@@ -98,10 +101,9 @@ int main(int argc, char **argv)
         {"Print signatures", PrintSignatures},
         {"Detect viruses", DetectViruses},
         {"Fix file", FixFile},
-        {"Quit", quit},
-        {NULL, NULL}};
+        {"Quit", quit}};
 
-    int bound = sizeof(functions) / sizeof(functions[0]) - 1;
+    int bound = sizeof(functions) / sizeof(functions[0]);
     int choice;
     char input[MAX_CHOICE_LEN];
     char *endptr;
@@ -177,9 +179,8 @@ virus *readVirus(FILE *file)
         return NULL;
     }
 
-    // no one knows how this works, copied from last semester spl assignment 3 solution
     if (endian)
-        v->SigSize = ((v->SigSize & 0xFF00) >> 8) | ((v->SigSize & 0x00FF) << 8);
+        v->SigSize = ((v->SigSize) >> 8) | ((v->SigSize) << 8);
 
     if (v->SigSize > 1000 && debug)
         printf("Warning: signature size of %i is big\n", v->SigSize);
@@ -318,7 +319,7 @@ void DetectViruses()
         return;
     }
 
-    char buffer[BUFFER_SIZE] = {0};
+    char buffer[BUFFER_SIZE]; // TODO test lazy init
     int read;
     if (!(read = fread(buffer, 1, sizeof(buffer), suspectFile)))
     {
