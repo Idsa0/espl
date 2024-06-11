@@ -14,5 +14,13 @@ int main(int argc, char *argv[], char *envp[])
 {
     /*Complete the task here*/
 
+    int i = 0;
+    while (i < argc)
+    {
+        system_call(SYS_WRITE, STDOUT, argv[i], strlen(argv[i]));
+        system_call(SYS_WRITE, STDOUT, " ", 1);
+        i++;
+    }
+    
     return 0;
 }
