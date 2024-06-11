@@ -16,7 +16,7 @@ int debug = 0;
 
 void PrintHex(unsigned char buffer[], int length, FILE *out);
 
-char sigFileName[MAX_FILE_NAME]; // TODO test lazy init
+char sigFileName[MAX_FILE_NAME];
 void SetSigFileName();
 int endian = ENDIAN_L;
 
@@ -45,7 +45,7 @@ struct link
 link *v_list = NULL;
 FILE *sigFile = NULL;
 FILE *suspectFile = NULL;
-char suspectFileName[MAX_FILE_NAME]; // TODO test lazy init
+char suspectFileName[MAX_FILE_NAME];
 
 /* Print the data of every link in list to the given stream. Each item followed by a newline character. */
 void list_print(link *virus_list, FILE *);
@@ -319,7 +319,7 @@ void DetectViruses()
         return;
     }
 
-    char buffer[BUFFER_SIZE]; // TODO test lazy init
+    char buffer[BUFFER_SIZE];
     int read;
     if (!(read = fread(buffer, 1, sizeof(buffer), suspectFile)))
     {
