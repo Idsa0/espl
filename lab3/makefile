@@ -16,4 +16,9 @@ clean:
 	rm -f *.o task0
 
 run:
-	out -d
+	task0
+
+hw:
+	nasm -f elf32 start.s -o start.o
+	nasm -f elf32 helloworld.s -o helloworld.o
+	ld -m elf_i386 start.o helloworld.o -o helloworld
