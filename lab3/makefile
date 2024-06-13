@@ -1,4 +1,5 @@
 .SILENT: link compile clean run
+.PHONY: all link compile clean run
 
 all: clean assemble compile link
 
