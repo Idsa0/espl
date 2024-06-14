@@ -4,11 +4,10 @@
 all: clean assemble compile link
 
 link:
-	ld -m elf_i386 start.o -o task1
+	ld -m elf_i386 start.o util.o -o task1
 
 compile:
-#	gcc -m32 -Wall -ansi -c -nostdlib -fno-stack-protector util.c -o util.o
-	@echo "No need to compile any C code"
+	gcc -m32 -Wall -ansi -c -nostdlib -fno-stack-protector util.c -o util.o
 
 assemble:
 	nasm -f elf32 start.s -o start.o

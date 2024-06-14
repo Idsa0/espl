@@ -6,6 +6,9 @@ section .data
 
 section .text
 
+extern strcmp
+extern strlen
+
 global _start
 global system_call
 
@@ -48,12 +51,36 @@ system_call:
 
 main:
     ; TODO
+    push ebp
+    mov ebp, esp
+
+    add esp, ebp
+    pop ebp
+    ret
 
 encode:
     ; TODO
+    push ebp
+    mov ebp, esp
+
+    add esp, ebp
+    pop ebp
+    ret
 
 printf:
     ; TODO
+    push ebp
+    mov ebp, esp
+
+    add esp, ebp
+    pop ebp
+    ret
 
 perror:
     ; TODO
+    push ebp
+    mov ebp, esp
+
+    add esp, ebp
+    pop ebp
+    ret
