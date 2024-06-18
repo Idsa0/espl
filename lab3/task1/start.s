@@ -192,10 +192,28 @@ main_end:
 
 
 encode:
-    ; TODO
+    ; TODO - everything written here is just a placeholder
     push ebp
     mov ebp, esp
 
+    ; how do i save the encoding key?
+
+    ; read from input file
+    sub esp, 1024
+    push 1024
+    push esp
+    call read_next
+    cmp eax, 0
+    je encode_end
+
+    ; write to output file
+    push eax
+    push esp
+    call write
+
+    jmp encode
+
+encode_end:
     mov esp, ebp
     pop ebp
     ret
@@ -313,7 +331,8 @@ close:
 
     push 0
     push 0
-    push dword [ebp+8] ; file pointer
+    push dword [ebp+8]      ; file pointer
+    push 6                  ; close syscall
     call system_call
 
     mov esp, ebp
