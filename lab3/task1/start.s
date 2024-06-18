@@ -2,8 +2,10 @@ section .data
     flag_input db "-i", 0
     flag_output db "-o", 0
     newline db 0xA, 0
-    file_open_error db "Error opening file", 0xA, 0
+    file_open_error db "Error opening file", 0
     length_file_open_error equ $-file_open_error
+    argc_error db "Not enough arguments", 0
+    length_argc_error equ $-argc_error
 
 section .bss
     infile resd 1
@@ -113,7 +115,7 @@ check_flags:
 input_flag:
     ; check if there is a file name after the flag
     cmp ecx, [ebp+8]
-    je not_enough_args
+    je bad_file
 
     ; open the input file
     push edi
@@ -129,7 +131,7 @@ input_flag:
 output_flag:
     ; check if there is a file name after the flag
     cmp ecx, [ebp+8]
-    je not_enough_args
+    je bad_file
 
     ; open the output file
     push edi
@@ -146,9 +148,15 @@ end_check_flags:
     ; TODO
     jmp main_end
 
-not_enough_args:
+bad_file:
     push length_file_open_error
     push file_open_error
+    call perror
+    jmp main_end
+
+not_enough_args:
+    push length_argc_error
+    push argc_error
     call perror
     jmp main_end
 
