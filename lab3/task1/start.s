@@ -13,7 +13,6 @@ section .bss
 
 section .text
 
-extern strcmp
 extern strncmp
 extern strlen
 
@@ -72,80 +71,99 @@ main:
 
     ; loop over arguments and check for flags
     mov esi, [ebp+12]       ; argv
-    mov edi, [esi]          ; first argument
     add esi, 4              ; skip first argument
     mov ecx, 1              ; counter
 
 check_flags:
     cmp ecx, [ebp+8]    ; check if we reached the end of arguments
-    jg end_check_flags
+    jge end_check_flags
 
     ; print current arg to perror
-    push edi
+    push dword [esi]
     call strlen
     add esp, 4
     push eax
-    push edi
+    push dword [esi]
     call perror
     add esp, 8
 
-    ; ; check if the argument is a flag
-    ; push edi
-    ; push flag_input
-    ; push 2 ; number of bytes to check
-    ; call strncmp
-    ; add esp, 12
-    ; cmp eax, 0
-    ; je input_flag
+    ; check if the argument is a flag
+    pushad
+    push 2 ; number of bytes to check
+    push dword [esi]
+    push flag_input
+    call strncmp
+    add esp, 12
+    cmp eax, 0
+    popad
+    je input_flag
 
-    ; push edi
-    ; push flag_output
-    ; push 2 ; number of bytes to check
-    ; call strncmp
-    ; add esp, 12
-    ; cmp eax, 0
-    ; je output_flag
+    pushad
+    push 2 ; number of bytes to check
+    push dword [esi]
+    push flag_output
+    call strncmp
+    add esp, 12
+    cmp eax, 0
+    popad
+    je output_flag
 
     ; if the argument is not a flag, move to the next one
-    mov edi, [esi]
     add esi, 4
     inc ecx
     jmp check_flags
 
 input_flag:
     ; check if there is a file name after the flag
-    cmp ecx, [ebp+8]
-    je bad_file
+    pushad
+    push dword [esi]
+    call strlen
+    add esp, 4
+    cmp eax, 2
+    popad
+    jle bad_file
 
     ; open the input file
+    mov edi, [esi]
+    lea edi, [edi+2]
+    pushad
     push edi
     call open_in
     add esp, 4
+    popad
 
     ; move to the next argument
-    mov edi, [esi]
     add esi, 4
     inc ecx
     jmp check_flags
 
 output_flag:
     ; check if there is a file name after the flag
-    cmp ecx, [ebp+8]
-    je bad_file
+    pushad
+    push dword [esi]
+    call strlen
+    add esp, 4
+    cmp eax, 2
+    popad
+    jle bad_file
 
     ; open the output file
+    mov edi, [esi]
+    lea edi, [edi+2]
+    pushad
     push edi
     call open_out
     add esp, 4
+    popad
 
     ; move to the next argument
-    mov edi, [esi]
     add esi, 4
     inc ecx
     jmp check_flags
 
 end_check_flags:
-    ; TODO
+    call encode
+
     jmp main_end
 
 bad_file:
@@ -161,6 +179,11 @@ not_enough_args:
     jmp main_end
 
 main_end:
+    push dword [infile]
+    call close
+    push dword [outfile]
+    call close
+
     mov eax, 0
 
     mov esp, ebp
@@ -191,6 +214,7 @@ read_next:
     mov esp, ebp
     pop ebp
     ret
+
 
 write:
     push ebp
