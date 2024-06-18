@@ -192,7 +192,7 @@ main_end:
 
 
 encode:
-    ; TODO - everything written here is just a placeholder
+    ; TODO - everything written here is just a draft
     push ebp
     mov ebp, esp
 
@@ -274,22 +274,27 @@ open_in:
     push ebp
     mov ebp, esp
 
+    pushad
     push 0                       ; O_RDONLY
     push dword [ebp+8]           ; filename
     push 5                       ; open syscall
     call system_call
-    add esp, 12 ; TODO check if this is correct
+    add esp, 12
+    popad
 
-    cmp eax, -1
-    je open_in_fail
+    cmp eax, 0                   ; check if file was opened
+    jl open_in_fail
 
     mov dword [infile], eax      ; save file descriptor
     jmp open_in_end
 
 open_in_fail:
-    push file_open_error
+    pushad
     push length_file_open_error
+    push file_open_error
     call perror
+    add esp, 8
+    popad
 
 open_in_end:
     mov esp, ebp
@@ -301,23 +306,28 @@ open_out:
     push ebp
     mov ebp, esp
 
+    pushad
     push 0777
     push 577                     ; O_WRONLY | O_CREAT | O_TRUNC
     push dword [ebp+8]           ; filename
     push 5                       ; open syscall
     call system_call
-    add esp, 16 ; TODO check if this is correct
+    add esp, 16
+    popad
 
-    cmp eax, -1                  ; check if file was opened
-    je open_out_fail
+    cmp eax, 0                   ; check if file was opened
+    jl open_out_fail
 
     mov dword [outfile], eax     ; save file descriptor
     jmp open_out_end
 
 open_out_fail:
-    push file_open_error
+    pushad
     push length_file_open_error
+    push file_open_error
     call perror
+    add esp, 8
+    popad
 
 open_out_end:
     mov esp, ebp
@@ -329,11 +339,14 @@ close:
     push ebp
     mov ebp, esp
 
+    pushad
     push 0
     push 0
     push dword [ebp+8]      ; file pointer
     push 6                  ; close syscall
     call system_call
+    add esp, 16
+    popad
 
     mov esp, ebp
     pop ebp
