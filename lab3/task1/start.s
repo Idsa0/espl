@@ -2,11 +2,17 @@ section .data
     flag_input db "-i", 0
     flag_output db "-o", 0
     newline db 0xA, 0
-    ; TODO
+    file_open_error db "Error opening file", 0xA, 0
+    length_file_open_error equ $-file_open_error
+
+section .bss
+    infile resd 1
+    outfile resd 1
 
 section .text
 
 extern strcmp
+extern strncmp
 extern strlen
 
 global _start
@@ -31,6 +37,7 @@ _start:
     int     0x80
     nop
 
+
 system_call:
     push    ebp             ; Save caller state
     mov     ebp, esp
@@ -49,38 +56,234 @@ system_call:
     pop     ebp             ; Restore caller state
     ret                     ; Back to caller
 
+
 main:
-    ; TODO
     push ebp
     mov ebp, esp
 
-    add esp, ebp
+    mov dword [infile], 0   ; stdin
+    mov dword [outfile], 1  ; stdout
+
+    ; check if there are enough arguments
+    cmp dword [ebp+8], 2
+    jl not_enough_args
+
+    ; loop over arguments and check for flags
+    mov esi, [ebp+12]       ; argv
+    mov edi, [esi]          ; first argument
+    add esi, 4              ; skip first argument
+    mov ecx, 1              ; counter
+
+check_flags:
+    cmp ecx, [ebp+8]    ; check if we reached the end of arguments
+    jg end_check_flags
+
+    ; print current arg to perror
+    push edi
+    call strlen
+    add esp, 4
+    push eax
+    push edi
+    call perror
+    add esp, 8
+
+    ; ; check if the argument is a flag
+    ; push edi
+    ; push flag_input
+    ; push 2 ; number of bytes to check
+    ; call strncmp
+    ; add esp, 12
+    ; cmp eax, 0
+    ; je input_flag
+
+    ; push edi
+    ; push flag_output
+    ; push 2 ; number of bytes to check
+    ; call strncmp
+    ; add esp, 12
+    ; cmp eax, 0
+    ; je output_flag
+
+    ; if the argument is not a flag, move to the next one
+    mov edi, [esi]
+    add esi, 4
+    inc ecx
+    jmp check_flags
+
+input_flag:
+    ; check if there is a file name after the flag
+    cmp ecx, [ebp+8]
+    je not_enough_args
+
+    ; open the input file
+    push edi
+    call open_in
+    add esp, 4
+
+    ; move to the next argument
+    mov edi, [esi]
+    add esi, 4
+    inc ecx
+    jmp check_flags
+
+output_flag:
+    ; check if there is a file name after the flag
+    cmp ecx, [ebp+8]
+    je not_enough_args
+
+    ; open the output file
+    push edi
+    call open_out
+    add esp, 4
+
+    ; move to the next argument
+    mov edi, [esi]
+    add esi, 4
+    inc ecx
+    jmp check_flags
+
+end_check_flags:
+    ; TODO
+    jmp main_end
+
+not_enough_args:
+    push length_file_open_error
+    push file_open_error
+    call perror
+    jmp main_end
+
+main_end:
+    mov eax, 0
+
+    mov esp, ebp
     pop ebp
     ret
+
 
 encode:
     ; TODO
     push ebp
     mov ebp, esp
 
-    add esp, ebp
+    mov esp, ebp
     pop ebp
     ret
 
-printf:
-    ; TODO
+
+read_next:
     push ebp
     mov ebp, esp
 
-    add esp, ebp
+    push dword [ebp+12]         ; buffer size
+    push dword [ebp+8]          ; buffer
+    push dword [infile]         ; file descriptor
+    push 3                      ; read syscall
+    call system_call
+
+    mov esp, ebp
     pop ebp
     ret
+
+write:
+    push ebp
+    mov ebp, esp
+
+    push dword [ebp+12]         ; message length
+    push dword [ebp+8]          ; message
+    push dword [outfile]        ; file descriptor
+    push 4                      ; write syscall
+    call system_call
+    
+    mov esp, ebp
+    pop ebp
+    ret
+
 
 perror:
-    ; TODO
     push ebp
     mov ebp, esp
 
-    add esp, ebp
+    push dword [ebp+12]         ; message length
+    push dword [ebp+8]          ; message
+    push 2                      ; stderr
+    push 4                      ; write syscall
+    call system_call
+
+    push 1
+    push newline
+    push 2
+    push 4
+    call system_call
+
+    mov esp, ebp
+    pop ebp
+    ret
+
+
+open_in:
+    push ebp
+    mov ebp, esp
+
+    push 0                       ; O_RDONLY
+    push dword [ebp+8]           ; filename
+    push 5                       ; open syscall
+    call system_call
+    add esp, 12 ; TODO check if this is correct
+
+    cmp eax, -1
+    je open_in_fail
+
+    mov dword [infile], eax      ; save file descriptor
+    jmp open_in_end
+
+open_in_fail:
+    push file_open_error
+    push length_file_open_error
+    call perror
+
+open_in_end:
+    mov esp, ebp
+    pop ebp
+    ret
+
+
+open_out:
+    push ebp
+    mov ebp, esp
+
+    push 0777
+    push 577                     ; O_WRONLY | O_CREAT | O_TRUNC
+    push dword [ebp+8]           ; filename
+    push 5                       ; open syscall
+    call system_call
+    add esp, 16 ; TODO check if this is correct
+
+    cmp eax, -1                  ; check if file was opened
+    je open_out_fail
+
+    mov dword [outfile], eax     ; save file descriptor
+    jmp open_out_end
+
+open_out_fail:
+    push file_open_error
+    push length_file_open_error
+    call perror
+
+open_out_end:
+    mov esp, ebp
+    pop ebp
+    ret
+
+
+close:
+    push ebp
+    mov ebp, esp
+
+    push 0
+    push 0
+    push dword [ebp+8] ; file pointer
+    call system_call
+
+    mov esp, ebp
     pop ebp
     ret
