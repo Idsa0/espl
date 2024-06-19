@@ -197,68 +197,44 @@ encode:
     mov ebp, esp
 
     ; read a character from input file
-    pushad
-    call readc
+    mov edx, 1
+    mov ecx, char_buffer
+    mov ebx, dword [infile]
+    mov eax, 3
+    int 0x80
+
     cmp eax, 0
-    popad
-    jl encode_end
+    jle encode_end
+
+    cmp byte [char_buffer], 0
+    je encode_end
 
     ; check if the character is in the range 'A' to 'z'
-    cmp eax, 'A'
+    cmp byte [char_buffer], 'A'
     jl encode_write
-    cmp eax, 'z'
+    cmp byte [char_buffer], 'z'
     jg encode_write
-    cmp eax, 'z'
+    cmp byte [char_buffer], 'z'
     je encode_z
 
     ; increment the character by 1
-    inc eax
+    inc byte [char_buffer]
 
 encode_write:
     ; write the character to the output file
-    pushad
-    push eax
-    call putc
-    add esp, 4
-    popad
+    mov edx, 1
+    mov ecx, char_buffer
+    mov ebx, dword [outfile]
+    mov eax, 4
+    int 0x80
 
     jmp encode
 
 encode_z:
-    mov eax, 'A'
+    mov byte [char_buffer], 'A'
     jmp encode_write
 
 encode_end:
-    mov esp, ebp
-    pop ebp
-    ret
-
-
-readc:
-    push ebp
-    mov ebp, esp
-
-    push 1                      ; character length
-    push char_buffer            ; character buffer
-    push dword [infile]         ; file descriptor
-    push 3                      ; read syscall
-    call system_call
-
-    mov esp, ebp
-    pop ebp
-    ret
-
-
-putc:
-    push ebp
-    mov ebp, esp
-
-    push 1                      ; character length
-    push dword [ebp+8]          ; character
-    push dword [outfile]        ; file descriptor
-    push 4                      ; write syscall
-    call system_call
-
     mov esp, ebp
     pop ebp
     ret
@@ -319,7 +295,7 @@ open_out:
     push ebp
     mov ebp, esp
 
-    push 0777
+    push 0777o
     push 577                     ; O_WRONLY | O_CREAT | O_TRUNC
     push dword [ebp+8]           ; filename
     push 5                       ; open syscall
