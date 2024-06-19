@@ -6,6 +6,7 @@ section .data
     length_file_open_error equ $-file_open_error
     argc_error db "Not enough arguments", 0
     length_argc_error equ $-argc_error
+    char_buffer db 0
 
 section .bss
     infile resd 1
@@ -196,22 +197,39 @@ encode:
     push ebp
     mov ebp, esp
 
-    ; how do i save the encoding key?
+    ; increment every byte by 1 if it is in the range 'A' to 'z', for 'z' it will be 'A'
 
-    ; read from input file
-    sub esp, 1024
-    push 1024
-    push esp
-    call read_next
+    ; read a character from input file
+    pushad
+    call readc
     cmp eax, 0
-    je encode_end
+    popad
+    jl encode_end
 
-    ; write to output file
+    ; check if the character is in the range 'A' to 'z'
+    cmp eax, 'A'
+    jl encode_write
+    cmp eax, 'z'
+    jg encode_write
+    cmp eax, 'z'
+    je encode_z
+
+    ; increment the character by 1
+    inc eax
+
+encode_write:
+    ; write the character to the output file
+    pushad
     push eax
-    push esp
-    call write
+    call putc
+    add esp, 4
+    popad
 
     jmp encode
+
+encode_z:
+    mov eax, 'A'
+    jmp encode_write
 
 encode_end:
     mov esp, ebp
@@ -219,14 +237,29 @@ encode_end:
     ret
 
 
-read_next:
+readc:
     push ebp
     mov ebp, esp
 
-    push dword [ebp+12]         ; buffer size
-    push dword [ebp+8]          ; buffer
+    push 1                      ; character length
+    push char_buffer            ; character buffer
     push dword [infile]         ; file descriptor
     push 3                      ; read syscall
+    call system_call
+
+    mov esp, ebp
+    pop ebp
+    ret
+
+
+putc:
+    push ebp
+    mov ebp, esp
+
+    push 1                      ; character length
+    push dword [ebp+8]          ; character
+    push dword [outfile]        ; file descriptor
+    push 4                      ; write syscall
     call system_call
 
     mov esp, ebp
@@ -274,13 +307,11 @@ open_in:
     push ebp
     mov ebp, esp
 
-    pushad
+    push 0777
     push 0                       ; O_RDONLY
     push dword [ebp+8]           ; filename
     push 5                       ; open syscall
     call system_call
-    add esp, 12
-    popad
 
     cmp eax, 0                   ; check if file was opened
     jl open_in_fail
@@ -306,14 +337,11 @@ open_out:
     push ebp
     mov ebp, esp
 
-    pushad
     push 0777
     push 577                     ; O_WRONLY | O_CREAT | O_TRUNC
     push dword [ebp+8]           ; filename
     push 5                       ; open syscall
     call system_call
-    add esp, 16
-    popad
 
     cmp eax, 0                   ; check if file was opened
     jl open_out_fail
@@ -339,14 +367,11 @@ close:
     push ebp
     mov ebp, esp
 
-    pushad
     push 0
     push 0
     push dword [ebp+8]      ; file pointer
     push 6                  ; close syscall
     call system_call
-    add esp, 16
-    popad
 
     mov esp, ebp
     pop ebp
