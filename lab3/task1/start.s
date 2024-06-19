@@ -79,13 +79,13 @@ check_flags:
     cmp ecx, [ebp+8]    ; check if we reached the end of arguments
     jge end_check_flags
 
-    ; print current arg to perror
+    ; print current arg to stderr
     push dword [esi]
     call strlen
     add esp, 4
     push eax
     push dword [esi]
-    call perror
+    call printerr
     add esp, 8
 
     ; check if the argument is a flag
@@ -170,13 +170,13 @@ end_check_flags:
 bad_file:
     push length_file_open_error
     push file_open_error
-    call perror
+    call printerr
     jmp main_end
 
 not_enough_args:
     push length_argc_error
     push argc_error
-    call perror
+    call printerr
     jmp main_end
 
 main_end:
@@ -193,11 +193,8 @@ main_end:
 
 
 encode:
-    ; TODO - everything written here is just a draft
     push ebp
     mov ebp, esp
-
-    ; increment every byte by 1 if it is in the range 'A' to 'z', for 'z' it will be 'A'
 
     ; read a character from input file
     pushad
@@ -267,22 +264,7 @@ putc:
     ret
 
 
-write:
-    push ebp
-    mov ebp, esp
-
-    push dword [ebp+12]         ; message length
-    push dword [ebp+8]          ; message
-    push dword [outfile]        ; file descriptor
-    push 4                      ; write syscall
-    call system_call
-    
-    mov esp, ebp
-    pop ebp
-    ret
-
-
-perror:
+printerr:
     push ebp
     mov ebp, esp
 
@@ -307,7 +289,7 @@ open_in:
     push ebp
     mov ebp, esp
 
-    push 0777
+    push 0
     push 0                       ; O_RDONLY
     push dword [ebp+8]           ; filename
     push 5                       ; open syscall
@@ -323,7 +305,7 @@ open_in_fail:
     pushad
     push length_file_open_error
     push file_open_error
-    call perror
+    call printerr
     add esp, 8
     popad
 
@@ -353,7 +335,7 @@ open_out_fail:
     pushad
     push length_file_open_error
     push file_open_error
-    call perror
+    call printerr
     add esp, 8
     popad
 
