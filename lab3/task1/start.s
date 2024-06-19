@@ -171,20 +171,32 @@ bad_file:
     push length_file_open_error
     push file_open_error
     call printerr
+    add esp, 8
     jmp main_end
 
 not_enough_args:
     push length_argc_error
     push argc_error
     call printerr
+    add esp, 8
     jmp main_end
 
 main_end:
-    push dword [infile]
-    call close
-    push dword [outfile]
-    call close
+    ; close the input and output files
+    mov ebx, [infile]
+    cmp ebx, 0
+    je skip_close_infile
+    mov eax, 6
+    int 0x80
 
+skip_close_infile:
+    mov ebx, [outfile]
+    cmp ebx, 1
+    je skip_close_outfile
+    mov eax, 6
+    int 0x80
+
+skip_close_outfile:
     mov eax, 0
 
     mov esp, ebp
@@ -265,11 +277,10 @@ open_in:
     push ebp
     mov ebp, esp
 
-    push 0
-    push 0                       ; O_RDONLY
-    push dword [ebp+8]           ; filename
-    push 5                       ; open syscall
-    call system_call
+    mov ecx, 0                   ; O_RDONLY
+    mov ebx, dword [ebp+8]       ; filename
+    mov eax, 5                   ; open syscall
+    int 0x80
 
     cmp eax, 0                   ; check if file was opened
     jl open_in_fail
@@ -295,11 +306,11 @@ open_out:
     push ebp
     mov ebp, esp
 
-    push 0777o
-    push 577                     ; O_WRONLY | O_CREAT | O_TRUNC
-    push dword [ebp+8]           ; filename
-    push 5                       ; open syscall
-    call system_call
+    mov edx, 0777o               ; file permissions
+    mov ecx, 577                 ; O_WRONLY | O_CREAT | O_TRUNC
+    mov ebx, dword [ebp+8]       ; filename
+    mov eax, 5                   ; open syscall
+    int 0x80
 
     cmp eax, 0                   ; check if file was opened
     jl open_out_fail
@@ -316,21 +327,6 @@ open_out_fail:
     popad
 
 open_out_end:
-    mov esp, ebp
-    pop ebp
-    ret
-
-
-close:
-    push ebp
-    mov ebp, esp
-
-    push 0
-    push 0
-    push dword [ebp+8]      ; file pointer
-    push 6                  ; close syscall
-    call system_call
-
     mov esp, ebp
     pop ebp
     ret
