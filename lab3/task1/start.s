@@ -90,13 +90,20 @@ check_flags:
     jge end_check_flags
 
     ; print current arg to stderr
+    pushad
     push dword [esi]
     call strlen
     add esp, 4
+    mov byte [char_buffer], al
+    popad
+    pushad
+    xor eax, eax
+    mov al, byte [char_buffer]
     push eax
     push dword [esi]
     call printerr
     add esp, 8
+    popad
 
     ; check if the argument is a flag
     pushad
@@ -157,22 +164,24 @@ output_flag:
 end_check_flags:
     call encode
 
-    jmp main_end
-
 main_end:
     ; close the input and output files
     mov ebx, [infile]
     cmp ebx, 0
     je skip_close_infile
     mov eax, syscall_close
+    pushad
     int 0x80
+    popad
 
 skip_close_infile:
     mov ebx, [outfile]
     cmp ebx, 1
     je skip_close_outfile
     mov eax, syscall_close
+    pushad
     int 0x80
+    popad
 
 skip_close_outfile:
     mov eax, 0
@@ -187,6 +196,7 @@ encode:
     mov ebp, esp
 
     ; read a character from input file
+    pushad
     mov edx, 1
     mov ecx, char_buffer
     mov ebx, dword [infile]
@@ -194,6 +204,7 @@ encode:
     int 0x80
 
     cmp eax, 0
+    popad
     jle encode_end
 
     cmp byte [char_buffer], 0
@@ -212,11 +223,13 @@ encode:
 
 encode_write:
     ; write the character to the output file
+    pushad
     mov edx, 1
     mov ecx, char_buffer
     mov ebx, dword [outfile]
     mov eax, syscall_write
     int 0x80
+    popad
 
     jmp encode
 
@@ -225,9 +238,14 @@ encode_z:
     jmp encode_write
 
 encode_end:
-    mov esp, ebp
-    pop ebp
-    ret
+    ; mov esp, ebp
+    ; pop ebp
+    ; ret
+
+    ; exit here because i feel like it B^)
+    mov ebx, 0
+    mov eax, syscall_exit
+    int 0x80
 
 
 printerr:
@@ -239,12 +257,14 @@ printerr:
     push stderr
     push syscall_write
     call system_call
+    add esp, 16
 
     push 1
     push newline
     push stderr
     push syscall_write
     call system_call
+    add esp, 16
 
     mov esp, ebp
     pop ebp
@@ -258,16 +278,16 @@ open_in:
     mov ecx, O_RDONLY
     mov ebx, dword [ebp+8]       ; filename
     mov eax, syscall_open
+    pushad
     int 0x80
-
     cmp eax, 0                   ; check if file was opened
     jl open_in_fail
 
     mov dword [infile], eax      ; save file descriptor
+    popad
     jmp open_in_end
 
 open_in_fail:
-    pushad
     push length_file_open_error
     push file_open_error
     call printerr
@@ -288,16 +308,17 @@ open_out:
     mov ecx, O_WRONLY | O_CREAT | O_TRUNC
     mov ebx, dword [ebp+8]       ; filename
     mov eax, syscall_open
+    pushad
     int 0x80
 
     cmp eax, 0                   ; check if file was opened
     jl open_out_fail
 
     mov dword [outfile], eax     ; save file descriptor
+    popad
     jmp open_out_end
 
 open_out_fail:
-    pushad
     push length_file_open_error
     push file_open_error
     call printerr
