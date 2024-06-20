@@ -1,11 +1,25 @@
+%define stdin           0
+%define stdout          1
+%define stderr          2
+
+%define syscall_exit    1
+%define syscall_read    3
+%define syscall_write   4
+%define syscall_open    5
+%define syscall_close   6
+
+%define O_RDONLY        0x0
+%define O_WRONLY        0x1
+%define O_CREAT         0x40
+%define O_TRUNC         0x200
+
+
 section .data
     flag_input db "-i", 0
     flag_output db "-o", 0
     newline db 0xA, 0
     file_open_error db "Error opening file", 0
     length_file_open_error equ $-file_open_error
-    argc_error db "Not enough arguments", 0
-    length_argc_error equ $-argc_error
     char_buffer db 0
 
 section .bss
@@ -35,7 +49,7 @@ _start:
     call    main        ; int main( int argc, char *argv[], char *envp[] )
 
     mov     ebx,eax
-    mov     eax,1
+    mov     eax,syscall_exit
     int     0x80
     nop
 
@@ -65,10 +79,6 @@ main:
 
     mov dword [infile], 0   ; stdin
     mov dword [outfile], 1  ; stdout
-
-    ; check if there are enough arguments
-    cmp dword [ebp+8], 2
-    jl not_enough_args
 
     ; loop over arguments and check for flags
     mov esi, [ebp+12]       ; argv
@@ -115,15 +125,6 @@ check_flags:
     jmp check_flags
 
 input_flag:
-    ; check if there is a file name after the flag
-    pushad
-    push dword [esi]
-    call strlen
-    add esp, 4
-    cmp eax, 2
-    popad
-    jle bad_file
-
     ; open the input file
     mov edi, [esi]
     lea edi, [edi+2]
@@ -139,15 +140,6 @@ input_flag:
     jmp check_flags
 
 output_flag:
-    ; check if there is a file name after the flag
-    pushad
-    push dword [esi]
-    call strlen
-    add esp, 4
-    cmp eax, 2
-    popad
-    jle bad_file
-
     ; open the output file
     mov edi, [esi]
     lea edi, [edi+2]
@@ -167,33 +159,19 @@ end_check_flags:
 
     jmp main_end
 
-bad_file:
-    push length_file_open_error
-    push file_open_error
-    call printerr
-    add esp, 8
-    jmp main_end
-
-not_enough_args:
-    push length_argc_error
-    push argc_error
-    call printerr
-    add esp, 8
-    jmp main_end
-
 main_end:
     ; close the input and output files
     mov ebx, [infile]
     cmp ebx, 0
     je skip_close_infile
-    mov eax, 6
+    mov eax, syscall_close
     int 0x80
 
 skip_close_infile:
     mov ebx, [outfile]
     cmp ebx, 1
     je skip_close_outfile
-    mov eax, 6
+    mov eax, syscall_close
     int 0x80
 
 skip_close_outfile:
@@ -212,7 +190,7 @@ encode:
     mov edx, 1
     mov ecx, char_buffer
     mov ebx, dword [infile]
-    mov eax, 3
+    mov eax, syscall_read
     int 0x80
 
     cmp eax, 0
@@ -237,7 +215,7 @@ encode_write:
     mov edx, 1
     mov ecx, char_buffer
     mov ebx, dword [outfile]
-    mov eax, 4
+    mov eax, syscall_write
     int 0x80
 
     jmp encode
@@ -258,14 +236,14 @@ printerr:
 
     push dword [ebp+12]         ; message length
     push dword [ebp+8]          ; message
-    push 2                      ; stderr
-    push 4                      ; write syscall
+    push stderr
+    push syscall_write
     call system_call
 
     push 1
     push newline
-    push 2
-    push 4
+    push stderr
+    push syscall_write
     call system_call
 
     mov esp, ebp
@@ -277,9 +255,9 @@ open_in:
     push ebp
     mov ebp, esp
 
-    mov ecx, 0                   ; O_RDONLY
+    mov ecx, O_RDONLY
     mov ebx, dword [ebp+8]       ; filename
-    mov eax, 5                   ; open syscall
+    mov eax, syscall_open
     int 0x80
 
     cmp eax, 0                   ; check if file was opened
@@ -307,9 +285,9 @@ open_out:
     mov ebp, esp
 
     mov edx, 0777o               ; file permissions
-    mov ecx, 577                 ; O_WRONLY | O_CREAT | O_TRUNC
+    mov ecx, O_WRONLY | O_CREAT | O_TRUNC
     mov ebx, dword [ebp+8]       ; filename
-    mov eax, 5                   ; open syscall
+    mov eax, syscall_open
     int 0x80
 
     cmp eax, 0                   ; check if file was opened
