@@ -227,6 +227,7 @@ int debug = 0;
 
 typedef struct history
 {
+    int index;
     char *command;
     struct history *next;
 } history;
@@ -235,13 +236,18 @@ history *hist = NULL;
 
 void execute(cmdLine *pCmdLine);
 
+/**
+ * Convert string to integer, print error if invalid
+ *
+ * @return integer value, -1 if invalid
+ */
 int stoierr(char *string)
 {
-    int val;
+    int val = 0;
     sscanf(string, "%d", &val);
-    if (val == 0)
+    if (!val)
     {
-        fprintf(stderr, "Error: invalid number");
+        fprintf(stderr, "Error: invalid number\n");
         return -1;
     }
     return val;
@@ -257,20 +263,33 @@ void set_debug(int argc, char **argv)
         }
 }
 
-history *add_to_history(char *command)
+void add_to_history(const char *command)
 {
     history *new = (history *)malloc(sizeof(history));
 
     if (!new)
     {
         perror("Error");
-        return hist;
+        return;
     }
 
-    new->command = strdup(command);
-    new->next = hist;
+    if (!hist)
+    {
+        hist = new;
+        hist->index = 1;
+        hist->command = strdup(command);
+        hist->next = NULL;
+        return;
+    }
 
-    return new;
+    history *tmp = hist;
+    while (tmp->next)
+        tmp = tmp->next;
+
+    new->index = tmp->index + 1;
+    new->command = strdup(command);
+    new->next = NULL;
+    tmp->next = new;
 }
 
 void free_history()
@@ -285,6 +304,33 @@ void free_history()
     }
 }
 
+void free_last_history()
+{
+    if (!hist)
+        return;
+
+    if (!hist->next)
+    {
+        free(hist->command);
+        free(hist);
+        hist = NULL;
+        return;
+    }
+
+    history *tmp = hist;
+    while (tmp->next->next)
+        tmp = tmp->next;
+
+    free(tmp->next->command);
+    free(tmp->next);
+    tmp->next = NULL;
+}
+
+/**
+ * Check for special commands and execute them
+ *
+ * @return 1 if found, 0 otherwise
+ */
 int chkspccmds(cmdLine *line)
 {
     if (strcmp(line->arguments[0], "quit") == 0)
@@ -293,7 +339,113 @@ int chkspccmds(cmdLine *line)
         free_history();
         exit(EXIT_SUCCESS);
     }
-    
+
+    else if (strcmp(line->arguments[0], "cd") == 0)
+    {
+        if (chdir(line->arguments[1]) == -1)
+            perror("Error");
+        return 1;
+    }
+
+    else if (strcmp(line->arguments[0], "alarm") == 0)
+    {
+        if (line->argCount != 2)
+            fprintf(stderr, "Error: invalid number of arguments\n");
+        else
+        {
+            int pid = stoierr(line->arguments[1]);
+            if (pid != -1)
+                kill(pid, SIGCONT);
+        }
+        return 1;
+    }
+
+    else if (strcmp(line->arguments[0], "blast") == 0)
+    {
+        if (line->argCount != 2)
+            fprintf(stderr, "Error: invalid number of arguments\n");
+        else
+        {
+            int pid = stoierr(line->arguments[1]);
+            if (pid != -1)
+                kill(pid, SIGINT);
+        }
+        return 1;
+    }
+
+    else if (strcmp(line->arguments[0], "history") == 0)
+    {
+        history *tmp = hist;
+        while (tmp)
+        {
+            printf("%d: %s", tmp->index, tmp->command);
+            tmp = tmp->next;
+        }
+        return 1;
+    }
+
+    else if (strcmp(line->arguments[0], "!!") == 0)
+    {
+        if (!hist || !hist->next)
+        {
+            free_history(); // not sure what linux does in this case but this is what I think is the best
+            fprintf(stderr, "Error: no commands in history\n");
+            return 1;
+        }
+
+        history *tmp = hist;
+        while (tmp->next->next)
+            tmp = tmp->next;
+
+        free(tmp->next->command);
+        tmp->next->command = strdup(tmp->command); // replace !! with last command
+
+        cmdLine *last = parseCmdLines(tmp->command);
+        if (!chkspccmds(last))
+            execute(last);
+
+        freeCmdLines(last);
+        return 1;
+    }
+
+    else if (line->arguments[0][0] == '!')
+    {
+        int index = stoierr(line->arguments[0] + 1);
+        if (!line->arguments[0][1])
+        {
+            fprintf(stderr, "Error: invalid command\n");
+            // delete self from history
+            free_last_history();
+
+            return 1;
+        }
+
+        history *tmp = hist;
+        while (tmp)
+        {
+            if (tmp->index == index && tmp->next) // make sure this is not self referential
+            {
+                // replace command with history command
+                free_last_history();
+                add_to_history(tmp->command);
+
+                cmdLine *cmd = parseCmdLines(tmp->command);
+                if (!chkspccmds(cmd))
+                    execute(cmd);
+
+                freeCmdLines(cmd);
+                return 1;
+            }
+            tmp = tmp->next;
+        }
+
+        fprintf(stderr, "%i: Event not found.\n", index);
+        // delete self from history
+        free_last_history();
+
+        return 1;
+    }
+
     return 0;
 }
 
@@ -310,35 +462,32 @@ int main(int argc, char **argv)
 
         printf("Enter command: ");
         fgets(buf, MAX_LINE, stdin);
+
+        if (feof(stdin))
+        {
+            free_history();
+            exit(EXIT_SUCCESS);
+        }
+
+        add_to_history(buf);
         cmdLine *line = parseCmdLines(buf);
 
         if (!line)
-        {
-            if (feof(stdin))
-            {
-                free_history();
-                exit(EXIT_SUCCESS);
-            }
-
             fprintf(stderr, "Error: invalid command\n");
-            // TODO check for add_to_history
-        }
         else if (!line->argCount)
         {
             fprintf(stderr, "Error: invalid command\n");
             freeCmdLines(line);
-            // TODO check for add_to_history
+            line = NULL;
         }
         else if (chkspccmds(line))
         {
-            hist = add_to_history(buf);
             freeCmdLines(line);
             line = NULL;
         }
         else
         {
             execute(line);
-            hist = add_to_history(buf);
             freeCmdLines(line);
             line = NULL;
         }
