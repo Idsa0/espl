@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_CHOICE_LEN 4
-#define MAX_FILE_NAME_LEN 128
+#define MAX_CHOICE_LEN 16
+#define MAX_FILE_NAME 128
 #define MAX_BUFFER_LEN 10000
 
 static char *hex_formats[] = {"%#hhx\n", "%#hx\n", "No such unit", "%#x\n"};
@@ -12,7 +12,7 @@ static char *dec_formats[] = {"%#hhd\n", "%#hd\n", "No such unit", "%#d\n"};
 typedef struct
 {
     char debug_mode;
-    char file_name[MAX_FILE_NAME_LEN];
+    char file_name[MAX_FILE_NAME];
     int unit_size;
     unsigned char mem_buf[MAX_BUFFER_LEN];
     size_t mem_count;
@@ -38,7 +38,7 @@ void toggle_debug_mode(state *s)
 void set_file_name(state *s)
 {
     printf("Enter file name:\n");
-    fgets(s->file_name, MAX_FILE_NAME_LEN, stdin);
+    fgets(s->file_name, MAX_FILE_NAME, stdin);
     s->file_name[strlen(s->file_name) - 1] = '\0';
 
     if (s->debug_mode)
@@ -71,7 +71,42 @@ void set_unit_size(state *s)
 
 void load_into_memory(state *s)
 {
-    fprintf(stderr, "Not implemented yet\n");
+    // check if filename is empty
+    if (s->file_name[0] == '\0')
+    {
+        fprintf(stderr, "No file name set\n");
+        return;
+    }
+
+    // open file for reading
+    FILE *file = fopen(s->file_name, "r");
+    if (!file)
+    {
+        fprintf(stderr, "Failed to open file\n");
+        return;
+    }
+
+    // prompt for location in hex and length in dec
+    printf("Please enter <location> <length>\n");
+    char input[MAX_CHOICE_LEN];
+    if (fgets(input, MAX_CHOICE_LEN, stdin) != NULL)
+    {
+        unsigned int location = strtol(input, NULL, 16);
+        unsigned int length = atoi(strchr(input, ' ') + 1);
+
+        if (s->debug_mode)
+            fprintf(stderr, "Debug: file name: %s, location: %#x, length: %d\n", s->file_name, location, length);
+
+        // read from file into memory
+        fseek(file, location, SEEK_SET);
+        s->mem_count = fread(s->mem_buf, s->unit_size, length, file);
+        if (s->mem_count)
+            fprintf(stderr, "Loaded %d units into memory\n", s->mem_count);
+        else
+            fprintf(stderr, "Failed to read from file\n");
+    }
+
+    fclose(file);
 }
 
 void toggle_display_mode(state *s)
