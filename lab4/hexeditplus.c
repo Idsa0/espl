@@ -16,6 +16,7 @@ typedef struct
     int unit_size;
     unsigned char mem_buf[MAX_BUFFER_LEN];
     size_t mem_count;
+    int display_mode;
     /*
      .
      .
@@ -111,7 +112,8 @@ void load_into_memory(state *s)
 
 void toggle_display_mode(state *s)
 {
-    fprintf(stderr, "Not implemented yet\n");
+    s->display_mode = 1 - s->display_mode;
+    printf("Display flag now %s, %s representation\n", s->display_mode == 1 ? "on" : "off", s->display_mode == 1 ? "hexadecimal" : "decimal");
 }
 
 void memory_display(state *s)
