@@ -6,7 +6,7 @@ rm_o:
 	rm -f *.o
 
 link:
-	gcc -g -m32 -Wall -o out myshell.c
+	gcc -g -m32 -Wall -o out myshell.o
 	gcc -g -m32 -Wall -o pipe mypipeline.o
 
 compile:
