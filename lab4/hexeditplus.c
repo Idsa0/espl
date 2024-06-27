@@ -16,7 +16,7 @@ typedef struct
     int unit_size;
     unsigned char mem_buf[MAX_BUFFER_LEN];
     size_t mem_count;
-    int display_mode;
+    char display_mode; // 0: dec, 1: hex
     /*
      .
      .
@@ -90,17 +90,17 @@ void load_into_memory(state *s)
     // prompt for location in hex and length in dec
     printf("Please enter <location> <length>\n");
     char input[MAX_CHOICE_LEN];
+    unsigned int location, length;
     if (fgets(input, MAX_CHOICE_LEN, stdin) != NULL)
     {
-        unsigned int location = strtol(input, NULL, 16);
-        unsigned int length = atoi(strchr(input, ' ') + 1);
+        sscanf(input, "%x %d\n", &location, &length);
 
         if (s->debug_mode)
-            fprintf(stderr, "Debug: file name: %s, location: %#x, length: %d\n", s->file_name, location, length);
+            fprintf(stderr, "Debug: file name: %s, location: %#X, length: %d\n", s->file_name, location, length);
 
         // read from file into memory
         fseek(file, location, SEEK_SET);
-        s->mem_count = fread(s->mem_buf, s->unit_size, length, file);
+        s->mem_count = fread(s->mem_buf, s->unit_size, length, file); // TODO is this right?
         if (s->mem_count)
             fprintf(stderr, "Loaded %d units into memory\n", s->mem_count);
         else
@@ -118,7 +118,26 @@ void toggle_display_mode(state *s)
 
 void memory_display(state *s)
 {
-    fprintf(stderr, "Not implemented yet\n");
+    printf("Enter address and length\n");
+    char input[MAX_CHOICE_LEN];
+    unsigned int addr, length;
+    if (fgets(input, MAX_CHOICE_LEN, stdin) != NULL)
+    {
+        sscanf(input, "%x %d\n", &addr, &length);
+
+        printf(s->display_mode ? "Hexadecimal\n===========\n" : "Decimal\n=======\n");
+
+        if (addr + (length - 1) * s->unit_size >= s->mem_count)
+        {
+            fprintf(stderr, "Out of bounds\n");
+            return;
+        }
+
+        for (int i = 0; i < length; ++i)
+            printf(s->display_mode ? hex_formats[s->unit_size - 1] : dec_formats[s->unit_size - 1], s->mem_buf[addr + i * s->unit_size]);
+
+        printf("\n");
+    }
 }
 
 void save_into_file(state *s)
@@ -141,10 +160,8 @@ void quit(state *s)
 
 int main(int argc, char **argv)
 {
-    state *s = calloc(1, sizeof(state));
-    s->debug_mode = 0;
+    state *s = calloc(1, sizeof(state)); // TODO do it on the stack
     s->unit_size = 1;
-    s->mem_count = 0;
 
     fun_desc functions[] =
         {{"Toggle Debug Mode", toggle_debug_mode},
