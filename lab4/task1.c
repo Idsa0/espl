@@ -139,14 +139,50 @@ void memory_display(state *s)
 
         for (int i = 0; i < length; ++i)
             printf(s->display_mode ? hex_formats[s->unit_size - 1] : dec_formats[s->unit_size - 1], *(unsigned int *)(s->mem_buf + addr + i * s->unit_size));
-
-        printf("\n");
     }
 }
 
 void save_into_file(state *s)
 {
-    fprintf(stderr, "Not implemented yet\n");
+    // check if filename is empty
+    if (s->file_name[0] == '\0')
+    {
+        fprintf(stderr, "No file name set\n");
+        return;
+    }
+
+    // open file for writing
+    FILE *file = fopen(s->file_name, "r+");
+    if (!file)
+    {
+        fprintf(stderr, "Failed to open file\n");
+        return;
+    }
+
+    printf("Please enter <source-address> <target-location> <length>\n");
+    char input[MAX_BUFFER_LEN];
+    unsigned int source_addr, target_location, length;
+    if (fgets(input, MAX_BUFFER_LEN, stdin) != NULL)
+    {
+        sscanf(input, "%x %x %d\n", &source_addr, &target_location, &length);
+
+        fseek(file, 0, SEEK_END);
+        if (target_location > ftell(file))
+        {
+            fprintf(stderr, "Target location is greater than file size\n");
+            fclose(file);
+            return;
+        }
+
+        if (s->debug_mode)
+            fprintf(stderr, "Debug: source address: %#X, target location: %#X, length: %d\n", source_addr, target_location, length);
+
+        fseek(file, target_location, SEEK_SET);
+        // fwrite(s->mem_buf + source_addr, s->unit_size, length, file);
+        fwrite(&s->mem_buf[source_addr], s->unit_size, length, file);
+    }
+
+    fclose(file);
 }
 
 void memory_modify(state *s)
