@@ -10,7 +10,7 @@ link:
 	gcc -g -m32 -Wall -o hexeditplus hexeditplus.o
 
 compile:
-	gcc -g -m32 -Wall -c -o hexeditplus.o hexeditplus.c
+	gcc -g -m32 -Wall -c -o hexeditplus.o task1.c
 
 clean:
 	rm -f *.o hexeditplus

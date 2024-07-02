@@ -32,15 +32,19 @@ typedef struct fun_desc
 
 void toggle_debug_mode(state *s)
 {
-    s->debug_mode = 1 - s->debug_mode;
-    fprintf(stderr, "Debug flag now %s\n", s->debug_mode == 1 ? "on" : "off");
+    s->debug_mode ^= 1;
+    fprintf(stderr, "Debug flag now %s\n", s->debug_mode ? "on" : "off");
 }
 
 void set_file_name(state *s)
 {
     printf("Enter file name:\n");
-    fgets(s->file_name, MAX_FILE_NAME, stdin);
-    s->file_name[strlen(s->file_name) - 1] = '\0';
+    char input[MAX_FILE_NAME];
+    if (fgets(input, MAX_FILE_NAME, stdin) != NULL)
+    {
+        input[strcspn(input, "\n")] = 0; // remove newline
+        strncpy(s->file_name, input, MAX_FILE_NAME);
+    }
 
     if (s->debug_mode)
         fprintf(stderr, "Debug: file name set to '%s'\n", s->file_name);
@@ -89,9 +93,9 @@ void load_into_memory(state *s)
 
     // prompt for location in hex and length in dec
     printf("Please enter <location> <length>\n");
-    char input[MAX_CHOICE_LEN];
+    char input[MAX_BUFFER_LEN];
     unsigned int location, length;
-    if (fgets(input, MAX_CHOICE_LEN, stdin) != NULL)
+    if (fgets(input, MAX_BUFFER_LEN, stdin) != NULL)
     {
         sscanf(input, "%x %d\n", &location, &length);
 
@@ -112,8 +116,8 @@ void load_into_memory(state *s)
 
 void toggle_display_mode(state *s)
 {
-    s->display_mode = 1 - s->display_mode;
-    printf("Display flag now %s, %s representation\n", s->display_mode == 1 ? "on" : "off", s->display_mode == 1 ? "hexadecimal" : "decimal");
+    s->display_mode ^= 1;
+    printf("Display flag now %s, %s representation\n", s->display_mode ? "on" : "off", s->display_mode ? "hexadecimal" : "decimal");
 }
 
 void memory_display(state *s)
@@ -134,7 +138,7 @@ void memory_display(state *s)
         }
 
         for (int i = 0; i < length; ++i)
-            printf(s->display_mode ? hex_formats[s->unit_size - 1] : dec_formats[s->unit_size - 1], s->mem_buf[addr + i * s->unit_size]);
+            printf(s->display_mode ? hex_formats[s->unit_size - 1] : dec_formats[s->unit_size - 1], *(unsigned int *)(s->mem_buf + addr + i * s->unit_size));
 
         printf("\n");
     }
@@ -184,7 +188,7 @@ int main(int argc, char **argv)
             fprintf(stderr, "unit size: %d\nfile name: %s\nmem count: %d\n", s->unit_size, s->file_name, s->mem_count);
 
         printf("Choose action:\n");
-        for (int i = 0; i < sizeof(functions) / sizeof(functions[0]); i++)
+        for (int i = 0; i < sizeof(functions) / sizeof(functions[0]); ++i)
             printf("%d-%s\n", i, functions[i].name);
 
         if (fgets(input, MAX_CHOICE_LEN, stdin) != NULL)
