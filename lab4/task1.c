@@ -187,7 +187,24 @@ void save_into_file(state *s)
 
 void memory_modify(state *s)
 {
-    fprintf(stderr, "Not implemented yet\n");
+    printf("Please enter <location> <val>\n");
+    char input[MAX_BUFFER_LEN];
+    unsigned int location, val;
+    if (fgets(input, MAX_BUFFER_LEN, stdin) != NULL)
+    {
+        sscanf(input, "%x %x\n", &location, &val);
+
+        if (s->debug_mode)
+            fprintf(stderr, "Debug: location: %#X, val: %#X\n", location, val);
+
+        if (location >= s->mem_count)
+        {
+            fprintf(stderr, "Out of bounds\n");
+            return;
+        }
+
+        *(unsigned int *)(s->mem_buf + location) = val;
+    }
 }
 
 void quit(state *s)
