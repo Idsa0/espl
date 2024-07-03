@@ -8,14 +8,14 @@ rm_o:
 
 link:
 	gcc -g -m32 -Wall -o hexeditplus hexeditplus.o
-	gcc -g -m32 -Wall -o ntsc ntsc.o
+	gcc -g -m32 -Wall -o myntsc ntsc.o
 
 compile:
 	gcc -g -m32 -Wall -c -o hexeditplus.o task1.c
 	gcc -g -m32 -Wall -fno-stack-protector -fno-pie -c -o ntsc.o task4.c
 
 clean:
-	rm -f *.o hexeditplus ntsc
+	rm -f *.o hexeditplus myntsc
 
 run:
 	hexeditplus

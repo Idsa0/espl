@@ -1,0 +1,8 @@
+task2:
+change the value at 0x18 to 0x8048350 in deepthought
+
+task3:
+change the value at 0x41d to 0xc3 in offensive
+
+task4:
+chagne the value at 47d in ntsc to the value in 11ed in myntsc with length 62
