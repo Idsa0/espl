@@ -6,6 +6,8 @@
 #define MAX_FILE_NAME 128
 #define MAX_BUFFER_LEN 10000
 
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
 static char *hex_formats[] = {"%#hhx\n", "%#hx\n", "No such unit", "%#x\n"};
 static char *dec_formats[] = {"%#hhd\n", "%#hd\n", "No such unit", "%#d\n"};
 
@@ -24,6 +26,12 @@ typedef struct fun_desc
     char *name;
     void (*fun)(state *);
 } fun_desc;
+
+void reset_mem_buf(state *s)
+{
+    memset(s->mem_buf, 0, s->mem_count);
+    s->mem_count = 0;
+}
 
 void toggle_debug_mode(state *s)
 {
@@ -99,7 +107,8 @@ void load_into_memory(state *s)
 
         // read from file into memory
         fseek(file, location, SEEK_SET);
-        s->mem_count = fread(s->mem_buf, s->unit_size, length, file); // TODO is this right?
+        reset_mem_buf(s);
+        s->mem_count = fread(s->mem_buf, s->unit_size, length, file);
         if (s->mem_count)
             fprintf(stderr, "Loaded %d units into memory\n", s->mem_count);
         else
@@ -191,13 +200,14 @@ void memory_modify(state *s)
         if (s->debug_mode)
             fprintf(stderr, "Debug: location: %#X, val: %#X\n", location, val);
 
-        if (location >= s->mem_count)
+        if (location + s->unit_size >= MAX_BUFFER_LEN)
         {
             fprintf(stderr, "Out of bounds\n");
             return;
         }
 
-        *(unsigned int *)(s->mem_buf + location) = val;
+        s->mem_buf[location] = val;
+        s->mem_count = max(location + s->unit_size, s->mem_count);
     }
 }
 
