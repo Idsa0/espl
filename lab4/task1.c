@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_CHOICE_LEN 16
+#define MAX_CHOICE_LEN 64
 #define MAX_FILE_NAME 128
 #define MAX_BUFFER_LEN 10000
 
@@ -17,11 +17,6 @@ typedef struct
     unsigned char mem_buf[MAX_BUFFER_LEN];
     size_t mem_count;
     char display_mode; // 0: dec, 1: hex
-    /*
-     .
-     .
-     Any additional fields you deem necessary
-    */
 } state;
 
 typedef struct fun_desc
@@ -93,9 +88,9 @@ void load_into_memory(state *s)
 
     // prompt for location in hex and length in dec
     printf("Please enter <location> <length>\n");
-    char input[MAX_BUFFER_LEN];
+    char input[MAX_CHOICE_LEN];
     unsigned int location, length;
-    if (fgets(input, MAX_BUFFER_LEN, stdin) != NULL)
+    if (fgets(input, MAX_CHOICE_LEN, stdin) != NULL)
     {
         sscanf(input, "%x %d\n", &location, &length);
 
@@ -160,9 +155,9 @@ void save_into_file(state *s)
     }
 
     printf("Please enter <source-address> <target-location> <length>\n");
-    char input[MAX_BUFFER_LEN];
+    char input[MAX_CHOICE_LEN];
     unsigned int source_addr, target_location, length;
-    if (fgets(input, MAX_BUFFER_LEN, stdin) != NULL)
+    if (fgets(input, MAX_CHOICE_LEN, stdin) != NULL)
     {
         sscanf(input, "%x %x %d\n", &source_addr, &target_location, &length);
 
@@ -178,8 +173,7 @@ void save_into_file(state *s)
             fprintf(stderr, "Debug: source address: %#X, target location: %#X, length: %d\n", source_addr, target_location, length);
 
         fseek(file, target_location, SEEK_SET);
-        // fwrite(s->mem_buf + source_addr, s->unit_size, length, file);
-        fwrite(&s->mem_buf[source_addr], s->unit_size, length, file);
+        fwrite(source_addr ? (void *)source_addr : s->mem_buf, s->unit_size, length, file);
     }
 
     fclose(file);
@@ -188,9 +182,9 @@ void save_into_file(state *s)
 void memory_modify(state *s)
 {
     printf("Please enter <location> <val>\n");
-    char input[MAX_BUFFER_LEN];
+    char input[MAX_CHOICE_LEN];
     unsigned int location, val;
-    if (fgets(input, MAX_BUFFER_LEN, stdin) != NULL)
+    if (fgets(input, MAX_CHOICE_LEN, stdin) != NULL)
     {
         sscanf(input, "%x %x\n", &location, &val);
 
@@ -217,7 +211,7 @@ void quit(state *s)
 
 int main(int argc, char **argv)
 {
-    state *s = calloc(1, sizeof(state)); // TODO do it on the stack
+    state *s = calloc(1, sizeof(state));
     s->unit_size = 1;
 
     fun_desc functions[] =
