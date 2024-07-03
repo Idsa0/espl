@@ -135,7 +135,7 @@ void memory_display(state *s)
 
         printf(s->display_mode ? "Hexadecimal\n===========\n" : "Decimal\n=======\n");
 
-        if (addr + (length - 1) * s->unit_size >= s->mem_count)
+        if (addr + (length - 1) * s->unit_size >= MAX_BUFFER_LEN)
         {
             fprintf(stderr, "Out of bounds\n");
             return;
@@ -206,7 +206,7 @@ void memory_modify(state *s)
             return;
         }
 
-        s->mem_buf[location] = val;
+        *(unsigned int *)(s->mem_buf + location) = val;
         s->mem_count = max(location + s->unit_size, s->mem_count);
     }
 }
