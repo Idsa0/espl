@@ -1,19 +1,31 @@
-.SILENT: link compile clean run rm_o
-.PHONY: link compile clean run rm_o
+.SILENT: link assemble compile clean run rm_o
+.PHONY: link assemble compile clean run rm_o
 
-all: clean compile link rm_o
+FLG_GCC = -m32 -c -g -Wall
+FLG_LD = -L/usr/lib32 -lc -T linking_script -dynamic-linker /lib32/ld-linux.so.2
+FLG_NASM = -f elf32 -g
+LBITS := $(shell getconf LONG_BIT)
+ifeq ($(LBITS), 32)
+	FLG_GCC = -c -g -Wall
+	FLG_LD = -lc -T linking_script -dynamic-linker /lib/ld-linux.so.2
+endif
+
+all: clean assemble compile link rm_o
 
 rm_o:
 	rm -f *.o
 
 link:
-	gcc -g -m32 -Wall -o main main.o
+	ld $(FLG_LD) -o out loader.o start.o
 
 compile:
-	gcc -g -m32 -Wall -c -o main.o main.c
+	gcc $(FLG_GCC) -o loader.o loader.c
+
+assemble:
+	nasm $(FLG_NASM) -o start.o start.s
 
 clean:
-	rm -f *.o main
+	rm -f *.o out
 
 run:
-	main
+	out
