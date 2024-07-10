@@ -2,22 +2,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// extern int system_call();
+
+// #define malloc(size) (void *)system_call(9, size, 0, 0)
+// #define free(ptr) system_call(10, (int)ptr, 0, 0)
+
 int foreach_phdr(void *map_start, void (*func)(Elf32_Phdr *, int), int arg);
 void print_phdr(const Elf32_Phdr *phdr, int arg);
+void load_phdr(Elf32_Phdr *phdr, int fd);
+int startup(int argc, char **argv, void (*start)());
 
 int main(int argc, char **argv)
 {
     if (argc < 2)
     {
         printf("Usage: %s <file>\n", argv[0]);
-        exit(EXIT_FAILURE);
+        return 1;
     }
 
     FILE *file = fopen(argv[1], "r");
     if (!file)
     {
         perror("fopen");
-        exit(EXIT_FAILURE);
+        return 1;
     }
 
     fseek(file, 0, SEEK_END);
@@ -28,13 +35,13 @@ int main(int argc, char **argv)
     if (!map_start)
     {
         perror("malloc");
-        exit(EXIT_FAILURE);
+        return 1;
     }
 
     if (fread(map_start, 1, size, file) != size)
     {
         perror("fread");
-        exit(EXIT_FAILURE);
+        return 1;
     }
 
     fclose(file);
@@ -50,10 +57,8 @@ int foreach_phdr(void *map_start, void (*func)(Elf32_Phdr *, int), int arg)
     Elf32_Ehdr *ehdr = (Elf32_Ehdr *)map_start;
     Elf32_Phdr *phdr = (Elf32_Phdr *)(map_start + ehdr->e_phoff);
     for (int i = 0; i < ehdr->e_phnum; ++i)
-    {
-        func(phdr, arg);
-        ++phdr;
-    }
+        func(phdr++, arg);
+
     return 0;
 }
 
@@ -101,4 +106,15 @@ void print_phdr(const Elf32_Phdr *phdr, int arg)
            phdr->p_flags & PF_W ? 'W' : ' ',
            phdr->p_flags & PF_X ? 'X' : ' ',
            phdr->p_align);
+}
+
+void load_phdr(Elf32_Phdr *phdr, int fd)
+{
+    // TODO
+}
+
+int startup(int argc, char **argv, void (*start)())
+{
+    // TODO
+    return 0;
 }
