@@ -10,13 +10,13 @@ ifeq ($(LBITS), 32)
 	FLG_LD = -lc -T linking_script -dynamic-linker /lib/ld-linux.so.2
 endif
 
-all: clean assemble compile link rm_o
+all: assemble compile link
 
 rm_o:
 	rm -f *.o
 
 link:
-	ld $(FLG_LD) -o out loader.o start.o
+	ld $(FLG_LD) -o out loader.o startup.o start.o
 
 compile:
 	gcc $(FLG_GCC) -o loader.o loader.c

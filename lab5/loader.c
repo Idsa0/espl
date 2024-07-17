@@ -1,53 +1,58 @@
 #include <elf.h>
 #include <stdio.h>
-#include <stdlib.h>
+// #include <stdlib.h> // TODO maybe remove
+#include <sys/mman.h>
 
-// extern int system_call();
+extern int system_call();
+extern int startup(int argc, char **argv, void (*start)());
 
-// #define malloc(size) (void *)system_call(9, size, 0, 0)
-// #define free(ptr) system_call(10, (int)ptr, 0, 0)
+#define exit(status) system_call(1, (status), 0, 0)
+
+#ifndef EXIT_SUCCESS
+#define EXIT_SUCCESS 0
+#endif
+
+// #ifndef EXIT_FAILURE
+#define EXIT_FAILURE 1
+// #endif
 
 int foreach_phdr(void *map_start, void (*func)(Elf32_Phdr *, int), int arg);
-void print_phdr(const Elf32_Phdr *phdr, int arg);
+void print_phdr(Elf32_Phdr *phdr, int arg);
+static inline void pprint_phdrs(void *map_start);
 void load_phdr(Elf32_Phdr *phdr, int fd);
 int startup(int argc, char **argv, void (*start)());
+void print_mmap_prot_flags(Elf32_Phdr *phdr, int arg);
+
+size_t filesize = 0;
 
 int main(int argc, char **argv)
 {
     if (argc < 2)
     {
         printf("Usage: %s <file>\n", argv[0]);
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     FILE *file = fopen(argv[1], "r");
     if (!file)
     {
         perror("fopen");
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     fseek(file, 0, SEEK_END);
-    size_t size = ftell(file);
+    filesize = ftell(file);
     rewind(file);
 
-    void *map_start = malloc(size);
-    if (!map_start)
-    {
-        perror("malloc");
-        return 1;
-    }
+    // load the file into memory using mmap
+    void *map_start = mmap(NULL, filesize, PROT_READ | PROT_EXEC | PROT_WRITE, MAP_PRIVATE, fileno(file), 0);
 
-    if (fread(map_start, 1, size, file) != size)
-    {
-        perror("fread");
-        return 1;
-    }
-
+    foreach_phdr(map_start, load_phdr, fileno(file));
     fclose(file);
-    printf("Type         Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align\n");
-    foreach_phdr(map_start, (void (*)(Elf32_Phdr *, int))print_phdr, 0);
-    free(map_start);
+    pprint_phdrs(map_start);
+    startup(argc - 1, argv + 1, (void *)((Elf32_Ehdr *)map_start)->e_entry);
+
+    munmap(map_start, filesize);
 
     return 0;
 }
@@ -93,9 +98,9 @@ static inline char *get_phdr_type(const Elf32_Phdr *phdr)
     }
 }
 
-void print_phdr(const Elf32_Phdr *phdr, int arg)
+void print_phdr(Elf32_Phdr *phdr, int arg)
 {
-    printf("%-12s 0x%06x 0x%08x 0x%08x 0x%05x 0x%05x %c%c%c %d\n",
+    printf("%-12s 0x%06x 0x%08x 0x%08x 0x%05x 0x%05x %c%c%c 0x%X\n",
            get_phdr_type(phdr),
            phdr->p_offset,
            phdr->p_vaddr,
@@ -108,13 +113,54 @@ void print_phdr(const Elf32_Phdr *phdr, int arg)
            phdr->p_align);
 }
 
-void load_phdr(Elf32_Phdr *phdr, int fd)
+static inline void pprint_phdrs(void *map_start)
 {
-    // TODO
+    printf("Type         Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align\n");
+    foreach_phdr(map_start, print_phdr, 0);
 }
 
-int startup(int argc, char **argv, void (*start)())
+void print_mmap_prot_flags(Elf32_Phdr *phdr, int arg)
 {
-    // TODO
-    return 0;
+    int prot = 0;
+    if (phdr->p_flags & PF_R)
+        prot |= PROT_READ;
+    if (phdr->p_flags & PF_W)
+        prot |= PROT_WRITE;
+    if (phdr->p_flags & PF_X)
+        prot |= PROT_EXEC;
+
+    printf("0x%x\n", prot);
+}
+
+void load_phdr(Elf32_Phdr *phdr, int fd)
+{
+    if (phdr == MAP_FAILED)
+    {
+        perror("mmap error");
+        exit(EXIT_FAILURE);
+    }
+
+    // check if the file is an elf file
+    if (phdr->p_type != PT_LOAD)
+        return;
+
+    // check prot
+    int protFlags = 0;
+    if (phdr->p_flags & PF_R)
+        protFlags |= PROT_READ;
+    if (phdr->p_flags & PF_W)
+        protFlags |= PROT_WRITE;
+    if (phdr->p_flags & PF_X)
+        protFlags |= PROT_EXEC;
+
+    // align
+    void *vaddr = (void *)(phdr->p_vaddr & 0xfffff000);
+    unsigned int offset = phdr->p_offset & 0xfffff000;
+    unsigned int padding = phdr->p_vaddr & 0xfff;
+
+    if (mmap(vaddr, phdr->p_memsz + padding, protFlags, MAP_PRIVATE | MAP_FIXED, fd, offset) == MAP_FAILED)
+    {
+        perror("mmap");
+        exit(EXIT_FAILURE);
+    }
 }
