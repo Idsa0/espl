@@ -16,4 +16,4 @@ clean:
 	rm -f *.o myELF
 
 run:
-	./myELF a.out
+	myELF
