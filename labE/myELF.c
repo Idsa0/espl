@@ -15,7 +15,7 @@
         ptr = NULL; \
     }
 
-unsigned char next = 0;
+unsigned char loaded = 0;
 unsigned char debug = 0;
 char *filenames[MAX_FILES] = {NULL};
 FILE *files[MAX_FILES] = {INVALID_FILE};
@@ -45,43 +45,43 @@ static inline char *get_filename(void)
 
 static inline void load_file(const char *filename)
 {
-    if (files[next] != INVALID_FILE)
+    if (files[loaded] != INVALID_FILE)
     {
         return;
     }
 
-    files[next] = fopen(filename, "r");
-    if (files[next] == INVALID_FILE)
+    files[loaded] = fopen(filename, "r");
+    if (files[loaded] == INVALID_FILE)
     {
         perror("fopen");
         exit(EXIT_FAILURE);
     }
 
-    fseek(files[next], 0, SEEK_END);
-    file_sizes[next] = ftell(files[next]);
-    fseek(files[next], 0, SEEK_SET);
+    fseek(files[loaded], 0, SEEK_END);
+    file_sizes[loaded] = ftell(files[loaded]);
+    fseek(files[loaded], 0, SEEK_SET);
 
-    mapped_files[next] = mmap(NULL, file_sizes[next], PROT_READ, MAP_PRIVATE, fileno(files[next]), 0);
-    if (files[next] == MAP_FAILED)
+    mapped_files[loaded] = mmap(NULL, file_sizes[loaded], PROT_READ, MAP_PRIVATE, fileno(files[loaded]), 0);
+    if (files[loaded] == MAP_FAILED)
     {
         perror("mmap");
         exit(EXIT_FAILURE);
     }
 
-    if (next != MAX_FILES - 1)
-        ++next;
+    if (loaded != MAX_FILES)
+        ++loaded;
 }
 
 static inline void get_and_load_next(void)
 {
-    if (next >= MAX_FILES)
+    if (loaded >= MAX_FILES)
     {
         fprintf(stderr, "No more files can be loaded\n");
         return;
     }
 
-    filenames[next] = get_filename();
-    load_file(filenames[next]);
+    filenames[loaded] = get_filename();
+    load_file(filenames[loaded]);
 }
 
 typedef struct fun_desc
@@ -146,111 +146,197 @@ static inline void pprint_phdr(const Elf32_Ehdr *header)
 
 void examine_elf_file(void)
 {
-    if (!next)
+    if (!loaded)
         get_and_load_next();
 
-    for (int i = 0; i < next; ++i)
+    for (int i = 0; i < loaded; ++i)
     {
         printf("File %s\n", filenames[i]);
         pprint_phdr((Elf32_Ehdr *)mapped_files[i]);
     }
 }
 
-static inline void pprint_section_names(const Elf32_Ehdr *header)
-{
-    if (header == INVALID_FILE)
-        return;
-
-    Elf32_Shdr *section_headers = (Elf32_Shdr *)(header + header->e_shoff);
-    Elf32_Half strtab_index = header->e_shstrndx;
-
-    for (int i = 0; i < header->e_shnum; ++i)
-    {
-        Elf32_Shdr *section = &section_headers[i];
-        char *section_name = (char *)(header + section_headers[strtab_index].sh_offset + section->sh_name);
-        printf("[%d]\t %-20s\t %8x\t %x\t %x\t %x\n", i, section_name, section->sh_addr, section->sh_offset, section->sh_size, section->sh_type);
-    }
-}
-
 void print_section_names(void)
 {
-    if (!next)
+    if (!loaded)
         get_and_load_next();
 
-    for (int i = 0; i < next; ++i)
+    for (int i = 0; i < loaded; ++i)
     {
-        printf("File %s\n", filenames[i]);
-        pprint_section_names((Elf32_Ehdr *)mapped_files[i]);
+        Elf32_Ehdr *header = (Elf32_Ehdr *)mapped_files[i];
+        Elf32_Shdr *shdr = (Elf32_Shdr *)(mapped_files[i] + header->e_shoff);
+        char *strTab = mapped_files[i] + shdr[header->e_shstrndx].sh_offset;
+
+        printf("File: %s\n", filenames[i]);
+
+        for (int j = 0; j < header->e_shnum; ++j)
+        {
+            printf("[%d] %s %08x %06x %06x %d\n", j,
+                   strTab + shdr[j].sh_name, shdr[j].sh_addr,
+                   shdr[j].sh_offset, shdr[j].sh_size, shdr[j].sh_type);
+        }
+        printf("\n");
     }
 }
 
-static inline void pprint_symbols(const Elf32_Ehdr *header)
-{
-    if (header == INVALID_FILE || !header || !header->e_shnum)
-        return;
-
-    Elf32_Shdr *section_headers = (Elf32_Shdr *)(header + header->e_shoff);
-    Elf32_Shdr *symtab = NULL;
-    Elf32_Shdr *strtab = NULL;
-
-    for (int i = 0; i < header->e_shnum; ++i)
-    {
-        Elf32_Shdr *section = &section_headers[i];
-        if (section->sh_type == SHT_SYMTAB)
-            symtab = section;
-        else if (section->sh_type == SHT_STRTAB)
-            strtab = section;
-    }
-
-    if (!symtab || !strtab)
-    {
-        fprintf(stderr, "No symbol table or string table found\n");
-        return;
-    }
-
-    Elf32_Sym *symbols = (Elf32_Sym *)(header + symtab->sh_offset);
-    char *strtab_data = (char *)(header + strtab->sh_offset);
-
-    for (int i = 0; i < symtab->sh_size / symtab->sh_entsize; ++i)
-    {
-        Elf32_Sym *symbol = &symbols[i];
-        printf("[%d]\t %x\t %x\t %s\n", i, symbol->st_value, symbol->st_shndx, strtab_data + symbol->st_name);
-    }
-
-    printf("\n");
-
-    // TODO this does not work yet!
-}
-
-/**
- * The new Print Symbols option, for each open ELF file, should visit all the symbols in that ELF file (if none, print an error message and return). For each symbol, print its index number, its name and the name of the section in which it is defined. (similar to readelf -s). Format should be:
-
-File ELF-file0name
-
-[index] value section_index section_name symbol_name
-[index] value section_index section_name symbol_name
-[index] value section_index section_name symbol_name
- */
 void print_symbols(void)
 {
-    if (!next)
+    if (!loaded)
         get_and_load_next();
 
-    for (int i = 0; i < next; ++i)
+    Elf32_Ehdr *header;
+    Elf32_Shdr *shdrTable, *sectionHeader;
+    Elf32_Sym *symTable, *entry;
+    Elf32_Addr value;
+    char sh_index[100], *strTab, *sh_name, *symbol_names, *s_name;
+
+    // iterate over all the files
+    for (int i = 0; i < loaded; ++i)
     {
+        if (!mapped_files[i])
+            continue;
+
+        header = (Elf32_Ehdr *)mapped_files[i];
+        shdrTable = (Elf32_Shdr *)(mapped_files[i] + header->e_shoff);
+        strTab = mapped_files[i] + shdrTable[header->e_shstrndx].sh_offset;
+
         printf("File %s\n", filenames[i]);
-        pprint_symbols((Elf32_Ehdr *)mapped_files[i]);
+
+        // iterate over all the sections
+        for (int j = 0; j < header->e_shnum; ++j)
+        {
+            if (shdrTable[j].sh_type == SHT_SYMTAB || shdrTable[j].sh_type == SHT_DYNSYM)
+            {
+                symTable = (Elf32_Sym *)(mapped_files[i] + shdrTable[j].sh_offset);
+                symbol_names = (char *)(mapped_files[i] + shdrTable[shdrTable[j].sh_link].sh_offset);
+                printf("[index] value section_index section_name symbol_name\n");
+
+                // iterate over all the symbols
+                for (int k = 0; k < shdrTable[j].sh_size / sizeof(Elf32_Sym); ++k)
+                {
+                    entry = &symTable[k];
+
+                    value = entry->st_value;
+                    if (entry->st_shndx == SHN_UNDEF)
+                        strcpy(sh_index, "UND");
+                    else if (entry->st_shndx == SHN_ABS)
+                        strcpy(sh_index, "ABS");
+                    else
+                        sprintf(sh_index, "%d", entry->st_shndx);
+
+                    sh_name = entry->st_shndx == SHN_UNDEF || entry->st_shndx == SHN_ABS ? "" : strTab + shdrTable[entry->st_shndx].sh_name;
+                    s_name = entry->st_name == 0 ? "" : symbol_names + entry->st_name;
+
+                    if (entry->st_info == STT_SECTION)
+                    {
+                        sectionHeader = &shdrTable[entry->st_shndx];
+                        s_name = (char *)(mapped_files[0] + shdrTable[header->e_shstrndx].sh_offset + sectionHeader->sh_name);
+                    }
+                    printf("[%02d]  %08x %-3s %-20s %-20s\n", k, value, sh_index, sh_name, s_name);
+                }
+
+                printf("\n");
+            }
+        }
     }
+}
+
+static inline unsigned char search_symbol(const char *name,
+                                Elf32_Sym *symtab,
+                                const Elf32_Word size,
+                                char *symbol_names,
+                                Elf32_Shdr *shdr,
+                                const Elf32_Ehdr *header)
+{
+    Elf32_Shdr *sectionHeader;
+    Elf32_Sym *entry;
+    char *symbolName;
+
+    for (int i = 0; i < size; ++i)
+    {
+        entry = &symtab[i];
+        symbolName = symbol_names + entry->st_name;
+        if (entry->st_info == STT_SECTION)
+        {
+            sectionHeader = &shdr[entry->st_shndx];
+            symbolName = (char *)(mapped_files[0] + shdr[header->e_shstrndx].sh_offset + sectionHeader->sh_name);
+        }
+
+        if (strcmp(name, symbolName) == 0 && symtab[i].st_shndx != SHN_UNDEF)
+            return 1;
+    }
+
+    return 0;
 }
 
 void check_files_merge(void)
 {
-    // TODO stub method
+    // explicitly support only 2 files - no time to implement properly
+    while (loaded < 2)
+        get_and_load_next();
+
+    Elf32_Ehdr *header, *header2;
+    Elf32_Shdr *shdrTable1, *shdrTable2, *shdr;
+    Elf32_Sym *symtab1, *symtab2, *entry;
+    int sectionIndex, count1 = 0, count2 = 0, symtab1_index = -1, symtab2_index = -1;
+    char *symbols_names1, *symbols_names2, *symbolName;
+
+    header = (Elf32_Ehdr *)mapped_files[0];
+    header2 = (Elf32_Ehdr *)mapped_files[1];
+
+    shdrTable1 = (Elf32_Shdr *)(mapped_files[0] + header->e_shoff);
+    shdrTable2 = (Elf32_Shdr *)(mapped_files[1] + header2->e_shoff);
+
+    for (int i = 0; i < header->e_shnum; ++i)
+        if (shdrTable1[i].sh_type == SHT_SYMTAB || shdrTable1[i].sh_type == SHT_DYNSYM)
+        {
+            ++count1;
+            symtab1_index = i;
+        }
+
+    for (int i = 0; i < header2->e_shnum; ++i)
+        if (shdrTable2[i].sh_type == SHT_SYMTAB || shdrTable2[i].sh_type == SHT_DYNSYM)
+        {
+            ++count2;
+            symtab2_index = i;
+        }
+
+    if (count1 != 1 || count2 != 1)
+    {
+        fprintf(stderr, "Invalid number of symbol tables\n");
+        return;
+    }
+
+    symtab1 = (Elf32_Sym *)(mapped_files[0] + shdrTable1[symtab1_index].sh_offset);
+    symtab2 = (Elf32_Sym *)(mapped_files[1] + shdrTable2[symtab2_index].sh_offset);
+    symbols_names1 = (char *)(mapped_files[0] + shdrTable1[shdrTable1[symtab1_index].sh_link].sh_offset);
+    symbols_names2 = (char *)(mapped_files[1] + shdrTable2[shdrTable2[symtab2_index].sh_link].sh_offset);
+
+    for (int i = 1; i < shdrTable1[symtab1_index].sh_size / sizeof(Elf32_Sym); ++i)
+    {
+        entry = &symtab1[i];
+        if (entry->st_info == STT_SECTION)
+        {
+            sectionIndex = entry->st_shndx;
+            shdr = &shdrTable1[sectionIndex];
+            symbolName = (char *)(mapped_files[0] + shdrTable1[header->e_shstrndx].sh_offset + shdr->sh_name);
+        }
+        else
+            symbolName = symbols_names1 + entry->st_name;
+
+        if (symtab1[i].st_shndx == SHN_UNDEF &&
+            search_symbol(symbolName, symtab2, shdrTable2[symtab2_index].sh_size / sizeof(Elf32_Sym), symbols_names2, shdrTable2, header2) == 0)
+            fprintf(stderr, "Symbol %s not defined\n", symbolName);
+
+        else if (symtab1[i].st_shndx != SHN_UNDEF &&
+                 search_symbol(symbolName, symtab2, shdrTable2[symtab2_index].sh_size / sizeof(Elf32_Sym), symbols_names2, shdrTable2, header2) == 1)
+            fprintf(stderr, "Symbol %s defined in both files\n", symbolName);
+    }
 }
 
 void merge_elf_files(void)
 {
-    // TODO stub method
+    fprintf(stderr, "Not implemented!\n");
 }
 
 void quit(void)
