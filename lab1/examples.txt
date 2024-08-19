@@ -1,0 +1,250 @@
+RUN #1
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 0
+
+Within bounds
+1234
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 1
+
+Within bounds
+1
+2
+3
+4
+.
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 4
+
+Within bounds
+31	61
+32	62
+33	63
+34	64
+.
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 2
+
+Within bounds
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 1
+
+Within bounds
+4
+5
+6
+7
+.
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 4
+
+Within bounds
+34	64
+35	65
+36	66
+37	67
+.
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 3
+
+Within bounds
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 1
+
+Within bounds
+1
+2
+3
+4
+.
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 
+<HERE THE USER TERMINATED WITH CTRL-D (note <this> message is not printed>
+
+
+
+RUN #2
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 0
+
+Within bounds
+HEY!
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 1
+
+Within bounds
+H
+E
+Y
+!
+.
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 4
+
+Within bounds
+48	110 
+45	105
+59	131
+21	41
+.
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 2
+
+Within bounds
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 1
+
+Within bounds
+K
+H
+$
+.
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 4
+
+Within bounds
+4B	113
+48	110
+5C	134
+24	44
+.
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 3
+
+Within bounds
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option : 1
+
+Within bounds
+H
+E
+Y
+!
+.
+DONE.
+
+Select operation from the following menu (ctrl^D for exit):
+0)  Get string
+1)  Print string
+2)  Encrypt
+3)  Decrypt
+4)  Print Hex and Octal
+Option :
+<HERE THE USER TERMINATED WITH CTRL-D (note <this> message is not printed>

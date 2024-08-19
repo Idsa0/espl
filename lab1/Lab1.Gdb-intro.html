@@ -1,0 +1,593 @@
+
+<!-- saved from url=(0105)https://moodle.bgu.ac.il/moodle/pluginfile.php/4400659/mod_resource/content/2/Lab1.Gdb-intro.html?embed=1 -->
+<html data-darkreader-mode="dynamic" data-darkreader-scheme="dark" data-darkreader-proxy-injected="true"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><style class="darkreader darkreader--fallback" media="screen"></style><style class="darkreader darkreader--text" media="screen"></style><style class="darkreader darkreader--invert" media="screen">.jfk-bubble.gtx-bubble, .captcheck_answer_label > input + img, span#closed_text > img[src^="https://www.gstatic.com/images/branding/googlelogo"], span[data-href^="https://www.hcaptcha.com/"] > #icon, ::-webkit-calendar-picker-indicator, img.Wirisformula {
+    filter: invert(100%) hue-rotate(180deg) contrast(90%) !important;
+}</style><style class="darkreader darkreader--inline" media="screen">[data-darkreader-inline-bgcolor] {
+  background-color: var(--darkreader-inline-bgcolor) !important;
+}
+[data-darkreader-inline-bgimage] {
+  background-image: var(--darkreader-inline-bgimage) !important;
+}
+[data-darkreader-inline-border] {
+  border-color: var(--darkreader-inline-border) !important;
+}
+[data-darkreader-inline-border-bottom] {
+  border-bottom-color: var(--darkreader-inline-border-bottom) !important;
+}
+[data-darkreader-inline-border-left] {
+  border-left-color: var(--darkreader-inline-border-left) !important;
+}
+[data-darkreader-inline-border-right] {
+  border-right-color: var(--darkreader-inline-border-right) !important;
+}
+[data-darkreader-inline-border-top] {
+  border-top-color: var(--darkreader-inline-border-top) !important;
+}
+[data-darkreader-inline-boxshadow] {
+  box-shadow: var(--darkreader-inline-boxshadow) !important;
+}
+[data-darkreader-inline-color] {
+  color: var(--darkreader-inline-color) !important;
+}
+[data-darkreader-inline-fill] {
+  fill: var(--darkreader-inline-fill) !important;
+}
+[data-darkreader-inline-stroke] {
+  stroke: var(--darkreader-inline-stroke) !important;
+}
+[data-darkreader-inline-outline] {
+  outline-color: var(--darkreader-inline-outline) !important;
+}
+[data-darkreader-inline-stopcolor] {
+  stop-color: var(--darkreader-inline-stopcolor) !important;
+}
+[data-darkreader-inline-bg] {
+  background: var(--darkreader-inline-bg) !important;
+}
+[data-darkreader-inline-invert] {
+    filter: invert(100%) hue-rotate(180deg);
+}</style><style class="darkreader darkreader--variables" media="screen">:root {
+   --darkreader-neutral-background: #131516;
+   --darkreader-neutral-text: #d8d4cf;
+   --darkreader-selection-background: #004daa;
+   --darkreader-selection-text: #e8e6e3;
+}</style><style class="darkreader darkreader--root-vars" media="screen"></style><style class="darkreader darkreader--user-agent" media="screen">@layer {
+html {
+    background-color: #181a1b !important;
+}
+html {
+    color-scheme: dark !important;
+}
+iframe {
+    color-scheme: initial;
+}
+html, body {
+    background-color: #181a1b;
+}
+html, body {
+    border-color: #736b5e;
+    color: #e8e6e3;
+}
+a {
+    color: #3391ff;
+}
+table {
+    border-color: #545b5e;
+}
+mark {
+    color: #e8e6e3;
+}
+::placeholder {
+    color: #b2aba1;
+}
+input:-webkit-autofill,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+    background-color: #404400 !important;
+    color: #e8e6e3 !important;
+}
+::-webkit-scrollbar {
+    background-color: #202324;
+    color: #aba499;
+}
+::-webkit-scrollbar-thumb {
+    background-color: #454a4d;
+}
+::-webkit-scrollbar-thumb:hover {
+    background-color: #575e62;
+}
+::-webkit-scrollbar-thumb:active {
+    background-color: #484e51;
+}
+::-webkit-scrollbar-corner {
+    background-color: #181a1b;
+}
+::selection {
+    background-color: #004daa !important;
+    color: #e8e6e3 !important;
+}
+::-moz-selection {
+    background-color: #004daa !important;
+    color: #e8e6e3 !important;
+}
+}</style>
+  
+<meta name="darkreader" content="80d4af26d36b48e9b9c1ae048d25ca41"><style class="darkreader darkreader--override" media="screen">.vimvixen-hint {
+    background-color: #7b5300 !important;
+    border-color: #d8b013 !important;
+    color: #f3e8c8 !important;
+}
+#vimvixen-console-frame {
+    color-scheme: light !important;
+}
+::placeholder {
+    opacity: 0.5 !important;
+}
+#edge-translate-panel-body,
+.MuiTypography-body1,
+.nfe-quote-text {
+    color: var(--darkreader-neutral-text) !important;
+}
+gr-main-header {
+    background-color: #0f3a48 !important;
+}
+.tou-z65h9k,
+.tou-mignzq,
+.tou-1b6i2ox,
+.tou-lnqlqk {
+    background-color: var(--darkreader-neutral-background) !important;
+}
+.tou-75mvi {
+    background-color: #032029 !important;
+}
+.tou-ta9e87,
+.tou-1w3fhi0,
+.tou-1b8t2us,
+.tou-py7lfi,
+.tou-1lpmd9d,
+.tou-1frrtv8,
+.tou-17ezmgn {
+    background-color: #0a0a0a !important;
+}
+.tou-uknfeu {
+    background-color: #231603 !important;
+}
+.tou-6i3zyv {
+    background-color: #19576c !important;
+}
+div.mermaid-viewer-control-panel .btn {
+    background-color: var(--darkreader-neutral-background);
+    fill: var(--darkreader-neutral-text);
+}
+svg g rect.er {
+    fill: var(--darkreader-neutral-background) !important;
+}
+svg g rect.er.entityBox {
+    fill: var(--darkreader-neutral-background) !important;
+}
+svg g rect.er.attributeBoxOdd {
+    fill: var(--darkreader-neutral-background) !important;
+}
+svg g rect.er.attributeBoxEven {
+    fill: var(--darkreader-selection-background);
+    fill-opacity: 0.8 !important;
+}
+svg rect.er.relationshipLabelBox {
+    fill: var(--darkreader-neutral-background) !important;
+}
+svg g g.nodes rect,
+svg g g.nodes polygon {
+    fill: var(--darkreader-neutral-background) !important;
+}
+svg g rect.task {
+    fill: var(--darkreader-selection-background) !important;
+}
+svg line.messageLine0,
+svg line.messageLine1 {
+    stroke: var(--darkreader-neutral-text) !important;
+}
+div.mermaid .actor {
+    fill: var(--darkreader-neutral-background) !important;
+}
+mitid-authenticators-code-app > .code-app-container {
+    background-color: white !important;
+    padding-top: 1rem;
+}
+iframe#unpaywall[src$="unpaywall.html"] {
+    color-scheme: light !important;
+}</style></head>
+<body>
+
+<p></p>
+<h2>Using the GNU debugger (GDB)</h2>
+<hr>
+The following is a <em>summary</em> of the <a href="https://sourceware.org/gdb/current/onlinedocs/gdb.html/">GNU GDB
+  Manual.</a> Which is part of the <a href="https://www.sourceware.org/gdb/documentation/"> documentation of GNU GDB. </a> 
+<h3>Introduction</h3>
+The purpose of a debugger such as GDB is to allow you to
+see what is going on "inside" another program while it executes--or what another
+program was doing at the moment it crashed.
+<p>GDB can do four main kinds of things (plus other things in support of these)
+  to help you catch bugs in the act:
+
+</p>
+<ul>
+  <li>Start your program, specifying anything that might affect its behavior.
+  </li>
+  <li>Make your program stop on specified conditions.
+  </li>
+  <li>Examine what has happened, when your program has stopped.
+  </li>
+  <li>Change things in your program, so you can experiment with correcting the
+    effects of one bug and go on to learn about another.
+  </li>
+</ul>
+In order to debug
+a program effectively, you need to generate debugging information when you
+compile it. This debugging information is stored in the object file; it
+describes the data type of each variable or function and the correspondence
+between source line numbers and addresses in the executable code.
+<p>To request debugging information, specify the `-g' option when you run the
+  compiler.
+</p>
+<hr>
+<!-- =============================================================== -->
+<h3>GDB Quickstart</h3>
+<p>We provide you with a list of common GDB operations which
+  should get you going :
+</p>
+<h4>Stopping Execution</h4>
+<dl>
+
+  <dt><strong>break</strong>
+  </dt>
+  <dd>A <em>breakpoint</em> makes your program stop whenever a certain point in
+    the program is reached. For each breakpoint, you can add conditions to control
+    in finer detail whether your program stops. You can set breakpoints with the
+    `break' command and its variants to specify the place where your program
+    should stop by line number, function name or exact address in the program.
+    <dl>
+      <dt><tt>break FUNCTION</tt>
+      </dt>
+      <dd>Set a breakpoint at entry to function FUNCTION.
+      </dd>
+      <dt><tt>break LINENUM</tt>
+      </dt>
+      <dd>Set a breakpoint at line LINENUM in the current source file.
+      </dd>
+      <dt><tt>break FILENAME:LINENUM</tt>
+      </dt>
+      <dd>Set a breakpoint at line LINENUM in source file FILENAME.
+      </dd>
+      <dt><tt>break FILENAME:FUNCTION</tt>
+      </dt>
+      <dd>Set a breakpoint at entry to function FUNCTION found in file FILENAME.
+      </dd>
+      <dt><tt>break ... if COND</tt>
+      </dt>
+      <dd>Set a breakpoint with condition COND; evaluate the expression COND each
+        time the breakpoint is reached, and stop only if the value is nonzero--that
+        is, if COND evaluates as true. ... stands for one of the possible arguments
+        described above (or no argument) specifying where to break.
+      </dd>
+    </dl>
+
+  </dd>
+  <dt><strong>watch</strong>
+  </dt>
+  <dd>You can use a watchpoint to stop execution whenever the value of an
+    expression changes, without having to predict a particular place where this
+    may happen.
+    <dl>
+      <dt><tt>watch EXPR</tt>
+      </dt>
+      <dd>Set a watchpoint for an expression. GDB will break when EXPR is written
+        into by the program and its value changes.
+      </dd>
+    </dl>
+  </dd>
+  <dt><strong>info</strong>
+  </dt>
+  <dd>
+  </dd>
+  <dd>Print a table of all breakpoints and watchpoints set and not deleted, with
+    the following columns for each breakpoint: <tt>info breakpoints [N]<br>info
+      break [N]<br>info watchpoints [N]</tt>
+  </dd>
+  <dt><strong>clear</strong>
+  </dt>
+  <dd>Delete any breakpoints at the next instruction to be executed in the
+    selected stack frame. When the innermost frame is selected, this is a good way
+    to delete a breakpoint where your program just stopped.
+    <dl>
+
+      <dt><tt>clear FUNCTION<br>clear FILENAME:FUNCTION</tt>
+      </dt>
+      <dd>Delete any breakpoints set at entry to the function FUNCTION.
+      </dd>
+      <dt><tt>clear LINENUM<br>clear FILENAME:LINENUM</tt>
+      </dt>
+      <dd>Delete any breakpoints set at or within the code of the specified line.
+      </dd>
+    </dl>
+  </dd>
+  <dt><strong>delete</strong> <em>[breakpoints] [BNUMS...]</em>
+  </dt>
+  <dd>Delete the breakpoints or watchpoints of the numbers specified as
+    arguments. If no argument is specified, delete all breakpoints (GDB asks
+    confirmation, unless you have `set confirm off'). You can abbreviate this
+    command as `d'.
+  </dd>
+</dl>
+
+<h4>Running/Resuming Execution</h4>
+<dl>
+  <dt><strong>run</strong>
+  </dt>
+  <dd>Use the `run' command to start your program under GDB. You must first
+    specify the program name with an argument to GDB, or by using the `file' or
+    `exec-file' command.
+  </dd>
+  <dt><strong>step</strong>
+  </dt>
+  <dd>Continue running your program until control reaches a different source
+    line, then stop it and return control to GDB. This command is abbreviated
+    <strong>s</strong>.
+    <dl>
+      <dt><tt>step [COUNT]</tt> (shorthand <tt>s</tt>)
+      </dt>
+      <dd>Continue running as in `step', but do so COUNT times. If a breakpoint is
+        reached, or a signal not related to stepping occurs before COUNT steps,
+        stepping stops right away.
+      </dd>
+    </dl>
+
+  </dd>
+  <dt><strong>next</strong> <em>[COUNT]</em> (shorthand <tt>n</tt>)
+  </dt>
+  <dd>Continue to the next source line in the current (innermost) stack frame.
+    This is similar to `step', but function calls that appear within the line of
+    code are executed without stopping. Execution stops when control reaches a
+    different line of code at the original stack level that was executing when you
+    gave the `next' command. This command is abbreviated `n'.
+  </dd>
+  <dt><strong>continue</strong> <em>[IGNORE-COUNT]</em> (shorthand <tt>c</tt>)
+  </dt>
+  <dd>Resume program execution, at the address where your program last stopped;
+    any breakpoints set at that address are bypassed. The optional argument
+    IGNORE-COUNT allows you to specify a further number of times to ignore a
+    breakpoint at this location.
+  </dd>
+  <dt><strong>finish</strong>
+  </dt>
+  <dd>Continue running until just after function in the selected stack frame
+    returns. Print the returned value (if any).
+  </dd>
+</dl>
+
+<h4>Examining the Data and Source Code</h4>
+<dl>
+  <dt><strong>print</strong> <em>[EXP]</em> (shorthand <tt>p</tt>)
+  </dt>
+  <dd>EXP is an expression (in the source language). By default the value of EXP
+    is printed in a format appropriate to its data type; If you omit EXP, GDB
+    displays the last value again.
+  </dd>
+  <dt><strong>display EXP</strong> (shorthand <tt>disp</tt>)
+  </dt>
+  <dd>Add the expression EXP to the list of expressions to display each time
+    your program stops. `display' does not repeat if you press RET again after
+    using it.
+  </dd>
+  <dt><strong>list</strong> (shorthand <tt>l</tt>)
+  </dt>
+  <dd>To print lines from a source file, use the `list' command (abbreviated
+    `l'). By default, ten lines are printed. There are several ways to specify
+    what part of the file you want to print.
+    <p>Here are the forms of the `list' command most commonly used:
+    </p>
+    <dl>
+
+      <dt><tt>list LINENUM</tt>
+      </dt>
+      <dd>Print lines centered around line number LINENUM in the current source
+        file.
+      </dd>
+      <dt><tt>list FUNCTION</tt>
+      </dt>
+      <dd>Print lines centered around the beginning of function FUNCTION.
+      </dd>
+      <dt><tt>list</tt>
+      </dt>
+      <dd>Print more lines. If the last lines printed were printed with a `list'
+        command, this prints lines following the last lines printed; however, if the
+        last line printed was a solitary line printed as part of displaying a stack
+        frame (*note Examining the Stack: Stack.), this prints lines centered around
+        that line.
+      </dd>
+      <dt><tt>list -</tt>
+      </dt>
+      <dd>Print lines just before the lines last printed.</dd>
+    </dl>
+  </dd>
+</dl>
+<h4>Examining the Stack</h4>When your program has stopped, the first thing you
+need to know is where it stopped and how it got there.
+<p>Each time your program performs a function call, information about the call
+  is generated. That information includes the location of the call in your
+  program, the arguments of the call, and the local variables of the function
+  being called. The information is saved in a block of data called a "stack
+  frame". The stack frames are allocated in a region of memory called the "call
+  stack".
+
+</p>
+<p>
+</p>
+<dl>
+  <dt><strong>backtrace</strong> (shorthand <tt>bt</tt>)
+  </dt>
+  <dd>Print a backtrace of the entire stack: one line per frame for all frames
+    in the stack.
+  </dd>
+</dl>
+<hr>
+<h3>GDB Example</h3>
+<p>First we need to compile our program using the <tt>-g</tt>
+  flag. We will be considering the list abstract data type (ADT).
+  Our main program contains a set of tests in creating, inserting, and
+  searching for list elements.</p>
+<pre style="background-color: lightgrey; color: black; border: black; padding: 10px; --darkreader-inline-bgcolor: #313537; --darkreader-inline-color: #e8e6e3; --darkreader-inline-border-top: #8c8273; --darkreader-inline-border-right: #8c8273; --darkreader-inline-border-bottom: #8c8273; --darkreader-inline-border-left: #8c8273;" data-darkreader-inline-bgcolor="" data-darkreader-inline-color="" data-darkreader-inline-border-top="" data-darkreader-inline-border-right="" data-darkreader-inline-border-bottom="" data-darkreader-inline-border-left="">$ ls
+Makefile     list.c       list.h       test-list.c
+$ make
+gcc -Wall --strict-prototypes -g -c list.c
+gcc -Wall --strict-prototypes -g test-list.c list.o -o test-list
+</pre>
+
+We are now ready to start the debugger on the executable
+<tt>test-list</tt>.
+<pre style="background-color: lightgrey; color: black; border: black; padding: 10px; --darkreader-inline-bgcolor: #313537; --darkreader-inline-color: #e8e6e3; --darkreader-inline-border-top: #8c8273; --darkreader-inline-border-right: #8c8273; --darkreader-inline-border-bottom: #8c8273; --darkreader-inline-border-left: #8c8273;" data-darkreader-inline-bgcolor="" data-darkreader-inline-color="" data-darkreader-inline-border-top="" data-darkreader-inline-border-right="" data-darkreader-inline-border-bottom="" data-darkreader-inline-border-left="">$ gdb test-list
+GDB is free software and you are welcome to distribute copies of it
+ under certain conditions; type "show copying" to see the conditions.
+There is absolutely no warranty for GDB; type "show warranty" for details.
+GDB 4.6, Copyright 1992 Free Software Foundation, Inc.
+(gdb) run
+Starting program: /home/akonstan/allen/cs3139/recitation3/int-list/test-list
+begin test-list : insert two integer values 100, 200
+L = 200 100
+assigning '300' to val1 ...
+L = 200 100
+
+end test-list
+
+Program exited normally.
+
+(gdb) break main
+Breakpoint 1 at 0x804851a: file test-list.c, line 13.
+(gdb) run
+Starting program: /home/akonstan/allen/cs3139/recitation3/int-list/test-list
+
+Breakpoint 1, main () at test-list.c:13
+13	  List L = NULL;      /* declare (but not create) the list */
+(gdb) step
+16	  printf("begin test-list : insert two integer values 100, 200\n");
+(gdb) print L
+
+$1 = (struct Node *) 0x0
+(gdb) s
+begin test-list : insert two integer values 100, 200
+17	  L = MakeEmpty(L);   /* create the list */
+(gdb) s
+MakeEmpty (L=0x0) at list.c:36
+36	  if( L != NULL )
+(gdb) display L
+1: L = (struct Node *) 0x0
+(gdb) list
+31	    }
+32	}
+33
+34	List MakeEmpty( List L )
+35	{
+36	  if( L != NULL )
+37	    DeleteList( L );
+38	  L = (List) malloc( sizeof( struct Node ) );
+39	  assert(L != NULL);
+40
+(gdb) s
+38	  L = (List) malloc( sizeof( struct Node ) );
+1: L = (struct Node *) 0x0
+(gdb) s
+
+39	  assert(L != NULL);
+1: L = (struct Node *) 0x8049c50
+(gdb) s
+41	  L-&amp;gt;Next = NULL;
+1: L = (struct Node *) 0x8049c50
+(gdb) s
+42	  return L;
+1: L = (struct Node *) 0x8049c50
+(gdb) display *L
+2: *L = {Element = 0, Next = 0x0}
+(gdb) s
+43	}
+2: *L = {Element = 0, Next = 0x0}
+1: L = (struct Node *) 0x8049c50
+(gdb) s
+main () at test-list.c:18
+18	  assert(IsEmpty(L)); /* should be empty */
+
+(gdb) next
+19	  val1 = 100;         /* assign value */
+(gdb) s
+20	  val2 = 200;
+(gdb) s
+22	  Insert(val1, L, Header(L));         /* insert value val1 into list */
+(gdb) s
+Header (L=0x8049c50) at list.c:120
+120	  return L;
+(gdb) s
+121	}
+(gdb) s
+
+Insert (X=100, L=0x8049c50, P=0x8049c50) at list.c:110
+110	  TmpCell = malloc( sizeof( struct Node ) );
+(gdb) bt
+#0  Insert (X=100, L=0x8049c50, P=0x8049c50) at list.c:110
+#1  0x804859a in main () at test-list.c:22
+#2  0x80484ce in ___crt_dummy__ ()
+(gdb) s
+111	  assert(TmpCell != NULL);
+(gdb) break Find
+Breakpoint 2 at 0x804886e: file list.c, line 64.
+(gdb) cont
+Continuing.
+
+Breakpoint 2, Find (X=100, L=0x8049c50) at list.c:64
+64	  P = L-&amp;gt;Next;
+(gdb) print *L
+$2 = {Element = 0, Next = 0x8049c60}
+
+(gdb) print *(L-&amp;gt;Next)
+$3 = {Element = 100, Next = 0x0}
+(gdb) c
+Continuing.
+
+Breakpoint 2, Find (X=200, L=0x8049c50) at list.c:64
+64	  P = L-&amp;gt;Next;
+(gdb) c
+Continuing.
+L = 200 100
+assigning '300' to val1 ...
+L = 200 100
+
+end test-list
+
+The program is not being run.
+(gdb) delete
+Delete all breakpoints? (y or n) y
+(gdb) break MakeEmpty
+Breakpoint 2 at 0x80487df: file list.c, line 36.
+
+(gdb) run
+Starting program: /home/akonstan/allen/cs3139/recitation3/int-list/test-list
+begin test-list : insert two integer values 100, 200
+
+Breakpoint 2, MakeEmpty (L=0x0) at list.c:36
+36        if( L != NULL )
+(gdb) display L
+1: L = (struct Node *) 0x0
+(gdb) s
+38        L = (List) malloc( sizeof( struct Node ) );
+1: L = (struct Node *) 0x0
+(gdb) s
+39        assert(L != NULL);
+1: L = (struct Node *) 0x8049c50
+(gdb) print L = 0
+$1 = (struct Node *) 0x0
+(gdb) s
+test-list: list.c:39: MakeEmpty: Assertion `L != ((void *)0)' failed.
+Program received signal SIGABRT, Aborted.
+0x4003a3c5 in __kill ()
+(gdb) quit
+</pre>
+
+</body></html>
